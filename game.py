@@ -132,6 +132,10 @@ class Game:
         self.__mines_left += 1
         return True
 
+    def item_at(self, row:int, col:int) -> Item|None:
+        return self.__field[row,col] \
+        if self.__field.valid_bound(row,col) else None
+
     def setview(self, view):
         from gui import GameView
         assert isinstance(view, GameView)

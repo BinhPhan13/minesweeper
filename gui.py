@@ -1,4 +1,4 @@
-from helper import get_img
+from helper import get_img, vicinity
 from game import Item, GameState, Game
 
 from tkinter import *
@@ -114,6 +114,10 @@ class GameView(Frame):
         self.__grid.bind('<ButtonRelease-1>', self.lclick)
         self.__grid.bind('<3>', self.rclick)
 
+        self.__grid.bind('<1>', self.__preview)
+        self.__grid.bind('<B1-Motion>', self.__preview)
+        self.__preview_coord = None
+
         self.__sttbar = _SttBar(self)
         self.__sttbar.config(bg='#c0c0c0',
             highlightthickness=2, highlightbackground='#a0a0a0'
@@ -122,6 +126,7 @@ class GameView(Frame):
         self.adjust_stt()
 
     def lclick(self, event:Event):
+        self.__free_preview()
         r,c = self.__grid.handle_click(event)
         self.__game.open(r,c)
         self.adjust_stt()
@@ -141,3 +146,32 @@ class GameView(Frame):
 
     def adjust_grid(self, row:int, col:int, item:Item):
         self.__grid.adjust(row, col, item)
+
+    def __preview(self, event:Event):
+        r,c = self.__grid.handle_click(event)
+        item = self.__game.item_at(r,c)
+        if not item: return
+        if (r,c) == self.__preview_coord: return
+
+        self.__free_preview()
+        self.__preview_coord = r,c
+
+        if item is Item.UNOPEN:
+            self.__grid.adjust(r,c, Item.ZERO)
+        elif item.value > 0:
+            for i,j in vicinity(r,c):
+                item = self.__game.item_at(i,j)
+                if item is Item.UNOPEN:
+                    self.__grid.adjust(i,j, Item.ZERO)
+
+    def __free_preview(self):
+        if not self.__preview_coord: return
+        r,c = self.__preview_coord
+
+        assert self.__game.item_at(r,c)
+        for i,j in vicinity(r,c):
+            item = self.__game.item_at(i,j)
+            if not item: continue
+            self.__grid.adjust(i,j, item)
+
+        self.__preview_coord = None
