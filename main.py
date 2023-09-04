@@ -1,14 +1,15 @@
-from gui import GridView
+from gui import GameView
+from game import Mode, Game
 from tkinter import Tk
 
 root = Tk()
 root.resizable(False,False)
-root.config(bg='#d2d2d2') # better sunken effect
 
-HEIGHT = 20
-WIDTH = 30
+m = Mode(9,9, 10)
+g = Game(m)
+gv = GameView(root, g)
 
-gv = GridView(root, HEIGHT, WIDTH)
-gv.pack(padx=30, pady=30)
+g.setview(gv)
+gv.pack()
 
 root.mainloop()

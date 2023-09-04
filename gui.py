@@ -1,18 +1,38 @@
-from tkinter import *
-from PIL import ImageTk
-from helper import *
+from helper import get_img
+from game import Item, GameState, Game
 
-class GridView(Canvas):
+from tkinter import *
+from tkinter import font
+from PIL import ImageTk
+
+class _GridView(Canvas):
+    CELL_SIZE = 20
+    BD = 5
+
+    IMG_SIZE = CELL_SIZE, CELL_SIZE
+    IMGS = {
+        Item.ZERO: get_img('0.png', IMG_SIZE),
+        Item.ONE: get_img('1.png', IMG_SIZE),
+        Item.TWO: get_img('2.png', IMG_SIZE),
+        Item.THREE: get_img('3.png', IMG_SIZE),
+        Item.FOUR: get_img('4.png', IMG_SIZE),
+        Item.FIVE: get_img('5.png', IMG_SIZE),
+        Item.SIX: get_img('6.png', IMG_SIZE),
+        Item.SEVEN: get_img('7.png', IMG_SIZE),
+        Item.EIGHT: get_img('8.png', IMG_SIZE),
+
+        Item.FLAG: get_img('flag.png', IMG_SIZE),
+        Item.UNOPEN: get_img('unopen.png', IMG_SIZE),
+        Item.BOMB: get_img('bomb.png', IMG_SIZE)
+    }
+
     def __init__(self, master, height:int, width:int):
         super().__init__(master)
 
         self.__h, self.__w = height, width
-        self.__cell_size = 20
-        self.__bd = 4 # border width
-
         # in pixels
-        self.__scrh = self.__h*self.__cell_size + self.__bd*2
-        self.__scrw = self.__w*self.__cell_size + self.__bd*2
+        self.__scrh = self.__h*self.CELL_SIZE + self.BD*2
+        self.__scrw = self.__w*self.CELL_SIZE + self.BD*2
 
         self.config(highlightthickness=0,
             height=self.__scrh,
@@ -21,15 +41,12 @@ class GridView(Canvas):
         self.__load_imgs()
         self.__build()
 
-        self.bind('<ButtonRelease-1>', self.lclick)
-
     def __load_imgs(self):
-        self.__imgs = {
-            item: ImageTk.PhotoImage(
-                get_img(ITEM_IMG_FILES[item],
-                (self.__cell_size, self.__cell_size)
-            )) for item in Item
+        self.__tkimgs = {
+            item: ImageTk.PhotoImage(self.IMGS[item])
+            for item in self.IMGS
         }
+
     def __build(self):
         self.__img_ids = [
             [None for _ in range(self.__w)]
@@ -39,25 +56,88 @@ class GridView(Canvas):
         for r in range(self.__h):
             for c in range(self.__w):
                 self.__img_ids[r][c] = self.create_image(
-                    c*self.__cell_size + self.__bd,
-                    r*self.__cell_size + self.__bd,
-                    image=self.__imgs[Item.UNOPEN], anchor=NW
+                    c*self.CELL_SIZE + self.BD,
+                    r*self.CELL_SIZE + self.BD,
+                    image=self.__tkimgs[Item.UNOPEN], anchor=NW
                 )
 
         # sunken effect
-        for p in range(self.__bd):
+        for p in range(self.BD):
             self.create_line(0,p, self.__scrw-p,p,
                 fill='#999999')
             self.create_line(p,0, p,self.__scrh-p,
                 fill='#999999')
 
-    def lclick(self, event:Event):
-        r = (event.y-self.__bd)//self.__cell_size
-        c = (event.x-self.__bd)//self.__cell_size
+    def handle_click(self, event:Event):
+        r = (event.y-self.BD)//self.CELL_SIZE
+        c = (event.x-self.BD)//self.CELL_SIZE
+        return r,c
 
-        if in_range(r, -1, self.__h) \
-        and in_range(c, -1, self.__w):
-            self.itemconfig(
-                self.__img_ids[r][c],
-                image=self.__imgs[Item.ZERO]
-            )
+    def adjust(self, row:int, col:int, item:Item):
+        self.itemconfig(
+            self.__img_ids[row][col],
+            image=self.__tkimgs[item]
+        )
+
+class _SttBar(Label):
+    def __init__(self, master):
+        super().__init__(master)
+        self.__stt = StringVar()
+        self.config(
+            textvariable=self.__stt,
+            font=font.Font(size=13),
+            anchor=W
+        )
+
+    def adjust(self, mines_left:int, safes_left:int, state:GameState):
+        if state is GameState.WIN:
+            stt = 'COMPLETE !'
+        elif state is GameState.LOSE:
+            stt = 'DEAD !'
+        else:
+            stt = 'Mines left: ' + f'{mines_left}'
+            if safes_left < 10:
+                stt += f' ({safes_left} safes left)'
+        self.__stt.set(stt)
+
+class GameView(Frame):
+    def __init__(self, master, game:Game):
+        super().__init__(master)
+        self.__game = game
+        mode = self.__game.mode
+
+        gridframe = Frame(self, bg='#d2d2d2') # for sunken effect
+        gridframe.pack()
+        self.__grid = _GridView(gridframe, mode.height, mode.width)
+        self.__grid.pack(padx=30, pady=30)
+
+        self.__grid.bind('<ButtonRelease-1>', self.lclick)
+        self.__grid.bind('<3>', self.rclick)
+
+        self.__sttbar = _SttBar(self)
+        self.__sttbar.config(bg='#c0c0c0',
+            highlightthickness=2, highlightbackground='#a0a0a0'
+        )
+        self.__sttbar.pack(fill=X, expand=True)
+        self.adjust_stt()
+
+    def lclick(self, event:Event):
+        r,c = self.__grid.handle_click(event)
+        self.__game.open(r,c)
+        self.adjust_stt()
+
+    def rclick(self, event:Event):
+        r,c = self.__grid.handle_click(event)
+        if self.__game.flag(r,c):pass
+        elif self.__game.unflag(r,c):pass
+        self.adjust_stt()
+
+    def adjust_stt(self):
+        self.__sttbar.adjust(
+            self.__game.mines_left,
+            self.__game.safes_left,
+            self.__game.state
+        )
+
+    def adjust_grid(self, row:int, col:int, item:Item):
+        self.__grid.adjust(row, col, item)
