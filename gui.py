@@ -128,7 +128,8 @@ class GameView(Frame):
     def lclick(self, event:Event):
         self.__free_preview()
         r,c = self.__grid.handle_click(event)
-        self.__game.open(r,c)
+        if self.__game.open(r,c):pass
+        elif self.__game.auto(r,c):pass
         self.adjust_stt()
 
     def rclick(self, event:Event):

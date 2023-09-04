@@ -132,6 +132,30 @@ class Game:
         self.__mines_left += 1
         return True
 
+    def auto(self, row:int, col:int):
+        if not self.__valid_action(row,col): return False
+        mines_left = self.__field[row,col].value
+        if mines_left <= 0: return False
+
+        unopens = []
+        for r,c in vicinity(row,col):
+            if not self.__field.valid_bound(r,c): continue
+            item = self.__field[r,c]
+            if item is Item.UNOPEN:
+                unopens.append((r,c))
+            elif item is Item.FLAG:
+                mines_left -= 1
+
+        if len(unopens) == 0: return False # nothing to do
+        if mines_left == 0:
+            for r,c in vicinity(row,col):
+                self.open(r,c)
+        elif mines_left == len(unopens):
+            for r,c in vicinity(row,col):
+                self.flag(r,c)
+        else: return False # not a trivial case
+        return True
+
     def item_at(self, row:int, col:int) -> Item|None:
         return self.__field[row,col] \
         if self.__field.valid_bound(row,col) else None
