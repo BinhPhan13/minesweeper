@@ -23,7 +23,8 @@ class _GridView(Canvas):
 
         Item.FLAG: get_img('flag.png', IMG_SIZE),
         Item.UNOPEN: get_img('unopen.png', IMG_SIZE),
-        Item.BOMB: get_img('bomb.png', IMG_SIZE)
+        Item.BOMB: get_img('bomb.png', IMG_SIZE),
+        Item.BADFLAG: get_img('badflag.png', IMG_SIZE)
     }
 
     def __init__(self, master, height:int, width:int):

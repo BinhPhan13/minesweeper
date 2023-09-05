@@ -46,12 +46,14 @@ class Item(Enum):
     FLAG = -1
     UNOPEN = -2
     BOMB = -3
+    BADFLAG = -4
 
     def __str__(self) -> str:
         map_spec = {
             Item.FLAG:'F',
             Item.UNOPEN:'-',
             Item.BOMB:'X',
+            Item.BADFLAG:'?'
         }
         try: return map_spec[self]
         except: return f'{self.value}'
@@ -106,6 +108,10 @@ class Game:
 
         if self.__data[row,col] == -1: # lose
             self.__adjust(row, col, Item.BOMB)
+            for r,c in self.__field.all_coords:
+                if self.__field[r,c] is Item.FLAG \
+                and self.__data[r,c] != -1:
+                    self.__adjust(r,c, Item.BADFLAG)
             self.__state = GameState.LOSE
         else:
             self.__adjust(row, col, Item(self.__data[row,col]))
