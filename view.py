@@ -87,7 +87,7 @@ class _SttBar(Label):
         self.config(
             textvariable=self.__stt,
             font=font.Font(size=13),
-            anchor=W
+            anchor=W, width=23
         )
 
     def adjust(self, mines_left:int, safes_left:int, state:GameState):
@@ -182,10 +182,10 @@ class GameView(Frame):
         elif self.__game.auto(r,c):pass
         self.adjust_stt()
         
+        if first_click: self.__timer.start()
+
         if self.__game.state is not GameState.PLAY:
             self.__timer.stop()
-
-        if first_click: self.__timer.start()
 
     def rclick(self, event:Event):
         r,c = self.__grid.handle_click(event)
