@@ -206,3 +206,7 @@ class Game:
     @property
     def mode(self):
         return self.__mode
+    
+    @property
+    def has_data(self):
+        return self.__has_data

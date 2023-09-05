@@ -96,10 +96,50 @@ class _SttBar(Label):
         elif state is GameState.LOSE:
             stt = 'DEAD !'
         else:
-            stt = 'Mines left: ' + f'{mines_left}'
+            stt = 'Mines left:' + f'{mines_left}'
             if safes_left < 10:
                 stt += f' ({safes_left} safes left)'
         self.__stt.set(stt)
+
+class Timer(Label):
+    @staticmethod
+    def sec2min(seconds:int):
+        mins = seconds//60
+        secs = seconds%60
+        if mins > 99: mins, secs = 99, 59
+
+        return f'{mins:0>2}:{secs:0>2}'
+
+    def __init__(self, master):
+        self.__elapsed_secs = 0
+        self.__time_var = StringVar()
+        super().__init__(master)
+        self.config(
+            textvariable=self.__time_var,
+            font=font.Font(size=13),
+        )
+        self.reset()
+
+    def start(self):
+        self.__ended = False
+        self.after(1000, self.__count)
+
+    def __count(self):
+        if self.__ended: return
+        self.__elapsed_secs += 1
+        self.__adjust()
+        self.after(1000, self.__count)
+
+    def stop(self):
+        self.__ended = True
+
+    def reset(self):
+        self.stop()
+        self.__elapsed_secs = 0
+        self.__adjust()
+
+    def __adjust(self):
+        self.__time_var.set(f'[{Timer.sec2min(self.__elapsed_secs)}]')
 
 class GameView(Frame):
     def __init__(self, master, game:Game):
@@ -121,23 +161,42 @@ class GameView(Frame):
 
         self.__sttbar = _SttBar(self)
         self.__sttbar.config(bg='#c0c0c0',
-            highlightthickness=2, highlightbackground='#a0a0a0'
+            highlightthickness=1, highlightbackground='#a0a0a0'
         )
-        self.__sttbar.pack(fill=X, expand=True)
+        self.__sttbar.pack(fill=X, side=RIGHT, expand=True)
         self.adjust_stt()
+
+        self.__timer = Timer(self)
+        self.__timer.config(bg='#c0c0c0',
+            highlightthickness=1, highlightbackground='#a0a0a0'
+        )
+        self.__timer.pack(fill=X, side=LEFT)
 
     def lclick(self, event:Event):
         self.__free_preview()
         r,c = self.__grid.handle_click(event)
+
+        first_click = not self.__game.has_data
+
         if self.__game.open(r,c):pass
         elif self.__game.auto(r,c):pass
         self.adjust_stt()
+        
+        if self.__game.state is not GameState.PLAY:
+            self.__timer.stop()
+
+        if first_click: self.__timer.start()
 
     def rclick(self, event:Event):
         r,c = self.__grid.handle_click(event)
         if self.__game.flag(r,c):pass
         elif self.__game.unflag(r,c):pass
         self.adjust_stt()
+
+    def reset(self):
+        self.__game.restart()
+        self.adjust_stt()
+        self.__timer.reset()
 
     def adjust_stt(self):
         self.__sttbar.adjust(

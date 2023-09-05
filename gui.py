@@ -92,8 +92,7 @@ class GUI:
         self.__gameview.pack()
 
     def __newgame(self):
-        self.__game.restart()
-        self.__gameview.adjust_stt()
+        self.__gameview.reset()
 
     def __choose_mode(self):
         self.__mainframe.forget()
