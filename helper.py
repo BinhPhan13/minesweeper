@@ -15,6 +15,15 @@ def vicinity(r:int, c:int, pad:int=1):
         for dc in range(-pad, pad+1)
     )
 
+def bitcnt16(word:int):
+    assert isinstance(word, int)
+    # Hamming weight
+    word = ((word>>1)&0x5555) + (word&0x5555)
+    word = ((word>>2)&0x3333) + (word&0x3333)
+    word = ((word>>4)&0x0707) + (word&0x0707)
+    word = ((word>>8)&0x000F) + (word&0x000F)
+    return word
+
 WS = ' '
 BR = '\n'
 class Board:

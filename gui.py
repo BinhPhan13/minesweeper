@@ -109,5 +109,11 @@ class GUI:
             self.__gameview.destroy()
             self.__build_game()
 
+    def solve(self):
+        from solver import Solver
+        s = Solver(self.__game)
+        s.solve()
+
     def start(self):
+        self.__root.bind('ioub', lambda _: self.solve())
         self.__root.mainloop()
