@@ -3,6 +3,7 @@ from enum import Enum
 import random
 
 class Mode:
+    ATTRS = ('height', 'width', 'mines')
     def __init__(self, height:int, width:int, mines:int):
         self.__height = height
         self.__width = width
@@ -24,6 +25,12 @@ class Mode:
     @property
     def num_safes(self):
         return self.height*self.width-self.mines
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Mode): return False
+        return self.height == other.height \
+        and self.width == other.width \
+        and self.mines == other.mines \
 
 class Item(Enum):
     ZERO = 0
@@ -83,6 +90,7 @@ class Game:
         self.__has_data = True
 
     def __adjust(self, row:int, col:int, item:Item):
+        if self.__field[row,col] is item: return
         self.__field[row,col] = item
         try: self.__view.adjust_grid(row, col, item)
         except: print('No view!')
@@ -155,6 +163,18 @@ class Game:
                 self.flag(r,c)
         else: return False # not a trivial case
         return True
+
+    def restart(self):
+        for r,c in self.__data.all_coords:
+            self.__data[r,c] = 0
+        for r,c in self.__field.all_coords:
+            self.__adjust(r,c, Item.UNOPEN)
+        
+        self.__mines_left = self.mode.mines
+        self.__safes_left = self.mode.num_safes
+
+        self.__has_data = False
+        self.__state = GameState.PLAY
 
     def item_at(self, row:int, col:int) -> Item|None:
         return self.__field[row,col] \
