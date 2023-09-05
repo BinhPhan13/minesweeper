@@ -161,7 +161,7 @@ class Game:
         if self.__field.valid_bound(row,col) else None
 
     def setview(self, view):
-        from gui import GameView
+        from view import GameView
         assert isinstance(view, GameView)
         self.__view = view
 

@@ -1,4 +1,4 @@
-from gui import GameView
+from view import GameView
 from game import Mode, Game
 from tkinter import Tk
 
