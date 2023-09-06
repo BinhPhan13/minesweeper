@@ -91,12 +91,26 @@ class Game:
 
         self.__start_coord = sr,sc
 
+        # temporarily remove game view
+        view = self.__view
+        self.__view = None
+
+        # using solver to ensure solvability
+        from solver import Solver
+        solver = Solver(self)
+        solver.solve()
+
+        # reset and regain view
+        self.restart(False)
+        self.__view = view
+
     def __adjust(self, row:int, col:int, item:Item):
         if self.__field[row,col] is item: return
         self.__field[row,col] = item
-        try: self.__view.adjust_grid(row, col, item)
-        except: print('No view!')
-        self.__view.update()
+        try:
+            self.__view.adjust_grid(row, col, item)
+            self.__view.update()
+        except: pass
 
     def __valid_action(self, row:int, col:int):
         return self.__state is GameState.PLAY \

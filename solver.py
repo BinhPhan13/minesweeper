@@ -14,7 +14,9 @@ class Solver:
         self.__game.restart(False)
         self.__open(*self.__game.start_coord)
 
+        self.__clear = True
         self.__iter()
+        if not self.__clear: self.solve()
 
     def __iter(self):
         while True:
@@ -31,6 +33,11 @@ class Solver:
                 r,c = self.__game.dig()
                 assert self.__game.unflag(r,c)
                 self.__open(r,c)
+
+                # digging got potential to make the map unsolvable
+                # since it change a known square
+                # --> try again
+                self.__clear = False
 
     def __apply(self, changes:list[tuple[int, int, bool]]):
         for r,c, ismine in changes:
