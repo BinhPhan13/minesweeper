@@ -86,6 +86,42 @@ class Solver:
                 for r,c in e0.vars_pos: self.__flag(r,c)
                 return
 
+        # SUBTRACT
+            for i in self.__store.get_overlap(e0):
+                e1 = self.__store.get_eqn(i)
+                w0 = e0.munge(e1, True)
+                w1 = e1.munge(e0, True)
+
+                if w0 and w1:
+                    w0cnt = bitcnt16(w0)
+                    w1cnt = bitcnt16(w1)
+
+                    w0_eqn = EQN(e0.sr, e0.sc, w0, 0)
+                    w1_eqn = EQN(e1.sr, e1.sc, w1, 0)
+
+                    flag_eqn, open_eqn = None, None
+                    if w0cnt == e0.mines-e1.mines:
+                        flag_eqn, open_eqn = w0_eqn, w1_eqn
+                    elif w1cnt == e1.mines-e0.mines:
+                        flag_eqn, open_eqn = w1_eqn, w0_eqn
+
+                    if not (flag_eqn or open_eqn): continue
+                    for r,c in flag_eqn.vars_pos: self.__flag(r,c)
+                    for r,c in open_eqn.vars_pos: self.__open(r,c)
+                    return
+                # e1 is subset of e0
+                elif w0:
+                    sub_mines = e0.mines-e1.mines
+                    assert sub_mines >= 0
+                    new_eqn = EQN(e0.sr, e0.sc, w0, sub_mines)
+                    self.__store.add(new_eqn)
+                # e0 is subset of e1
+                elif w1:
+                    sub_mines = e1.mines-e0.mines
+                    assert sub_mines >= 0
+                    new_eqn = EQN(e1.sr, e1.sc, w1, sub_mines)
+                    self.__store.add(new_eqn)
+
     def __open(self, row:int, col:int):
         assert self.__game.open(row,col, False)
         self.__todo_sqs.append((row,col))
