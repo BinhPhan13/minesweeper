@@ -78,12 +78,19 @@ class GUI:
                 widget.grid(row=i+1, column=j+1, sticky=NSEW)
 
         Button(self.__config_frame,
-            text='OK', bg='#c0c0c0',
+            text='OK', bg='#a0a0a0',
             font=font.Font(size=10, weight=font.BOLD),
-            activebackground='#c0c0c0',
+            activebackground='#a0a0a0',
             relief=FLAT,
             command=self.__set_mode
         ).grid(row=0, column=0, sticky=NSEW)
+
+        Label(self.__config_frame, bg='#d0d0d0',
+        ).grid(
+            row=len(MODES)+1, column=0,
+            columnspan=len(Mode.ATTRS)+1,
+            sticky=NSEW
+        )
 
     def __build_game(self):
         self.__game = Game(self.__mode)
