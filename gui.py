@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 MODES = OrderedDict([
     ('Easy', Mode(9,9, 10)),
-    ('Medium', Mode(16,16, 40)),
+    ('Medium', Mode(16,16, 100)),
     ('Hard', Mode(16,30, 99)),
     ('Expert', Mode(20,30, 150)),
 ])
@@ -115,5 +115,5 @@ class GUI:
         s.solve()
 
     def start(self):
-        self.__root.bind('ioub', lambda _: self.solve())
+        self.__root.bind('s', lambda _: self.solve())
         self.__root.mainloop()

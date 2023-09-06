@@ -216,3 +216,97 @@ class Game:
     @property
     def start_coord(self):
         return self.__start_coord
+
+    # functions for modify data (requested by solver)
+    def modify(self, eqn):
+        from eqn import EQN
+        assert eqn is None or isinstance(eqn, EQN)
+
+        if not eqn: return None
+
+        full, clear = [], []
+        for r,c in eqn.vars_pos:
+            assert self.__field[r,c] is Item.UNOPEN
+            if self.__data[r,c] == -1:
+                full.append((r,c))
+            else: clear.append((r,c))
+
+        assert full and clear
+        
+        near, far = [], []
+        for r,c in self.__field.all_coords:
+            if eqn.munge(EQN(r,c,1,0), False): continue
+            if self.__field[r,c] is not Item.UNOPEN: continue
+
+            isnear = False
+            for i,j in vicinity(r,c):
+                if not self.__field.valid_bound(i,j): continue
+                v = self.__field[i,j].value
+                if v >= 0:
+                    assert v > 0
+                    isnear = True
+                    break
+
+            if isnear: near.append((r,c))
+            else: far.append((r,c))
+
+        random.shuffle(near)
+        if not near:
+            # prioritize empty the set
+            far.sort(key=lambda pos:-self.__data[pos]) # why?
+        else: random.shuffle(far)
+
+        usable = near + far
+        fill, empty = [], [] 
+        old, new = None, None
+
+        for r,c in usable:
+            if self.__data[r,c] == -1:
+                empty.append((r,c))
+            else: fill.append((r,c))
+
+            if len(fill) == len(full):
+                old, new = full, fill
+                break
+            elif len(empty) == len(clear):
+                old, new = empty, clear
+                break
+
+        if not old: # cannot find enough to fill/empty
+            assert not new
+            return None
+
+        changes:list[tuple[int,int,bool]] = []
+        changes.extend((*pos, False) for pos in old)
+        changes.extend((*pos, True) for pos in new)
+
+        self.__apply(changes)
+        return changes
+
+    def __apply(self, changes:list[tuple[int,int,bool]]):
+        for r,c, ismine in changes:
+            self.__data[r,c] = -1 if ismine else -2
+
+            d = 1 if ismine else -1
+            for i,j in vicinity(r,c):
+                if not self.__data.valid_bound(i,j) \
+                    or self.__data[i,j] < 0: continue
+                self.__data[i,j] += d
+                assert self.__data[i,j] >= 0
+
+                if self.__field[i,j] is not Item.UNOPEN:
+                    self.__adjust(i,j, Item(self.__data[i,j]))
+
+        # adjust old mines to new value
+        for r,c, ismine in changes:
+            if ismine: continue
+            assert self.__data[r,c] == -2
+            v = 0
+            for i,j in vicinity(r,c):
+                if self.__data.valid_bound(i,j) \
+                and self.__data[i,j] == -1:
+                    v += 1
+            self.__data[r,c] = v
+
+            if self.__field[r,c] is not Item.UNOPEN:
+                self.__adjust(r,c, Item(self.__data[r,c]))

@@ -27,11 +27,37 @@ class Solver:
             assert not self.__todo_sqs
             self.__deduct()
 
-            if self.__game.state is not GameState.PLAY: return
+            if self.done: return
 
-        if self.__glb_deduct() and \
-            self.__game.state is GameState.PLAY:
-            self.__iter()
+        if self.__glb_deduct():
+            if not self.done: self.__iter()
+            return
+
+        # reach here means we have to modify the map
+        e = self.__store.pick()
+
+        changes = self.__game.modify(e)
+        if not changes: return
+
+        self.__apply(changes)
+        self.__deduct()
+        if self.done: return
+
+        self.__iter()
+
+    def __apply(self, changes:list[tuple[int, int, bool]]):
+        for r,c, ismine in changes:
+            d = 1 if ismine else -1
+            e0 = EQN(r,c,1,0)
+            for i in self.__store.get_overlap(e0):
+                e1 = self.__store.get_eqn(i)
+                self.__store.remove(i)
+
+                new_mines = e1.mines + d
+                new_eqn = EQN(e1.sr, e1.sc, e1.mask, new_mines)
+                self.__store.add(new_eqn)
+
+            self.__store.clean()
         
     def __glb_deduct(self):
         '''Global deduction based on mines left'''
@@ -216,3 +242,7 @@ class Solver:
     def __flag(self, row:int, col:int):
         assert self.__game.flag(row,col)
         self.__todo_sqs.append((row,col))
+
+    @property
+    def done(self):
+        return self.__game.state is not GameState.PLAY

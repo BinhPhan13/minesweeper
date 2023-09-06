@@ -1,4 +1,5 @@
 from eqn import EQN
+import random
 
 class _Node:
     def __init__(self, eqn:EQN):
@@ -83,6 +84,10 @@ class Store:
 
     def get_all(self):
         return [node.eqn for node in self.__nodes]
+
+    def pick(self):
+        if not self.__nodes: return None
+        return random.choice(self.__nodes).eqn
 
     def fetch(self):
         ret = self.__head
