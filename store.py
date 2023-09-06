@@ -81,6 +81,9 @@ class Store:
         assert index > -1
         return self.__nodes[index].eqn
 
+    def get_all(self):
+        return [node.eqn for node in self.__nodes]
+
     def fetch(self):
         ret = self.__head
         if not ret: return None

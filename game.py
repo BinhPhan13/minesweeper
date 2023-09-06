@@ -194,6 +194,10 @@ class Game:
         self.__view = view
 
     @property
+    def field_coords(self):
+        return self.__field.all_coords
+
+    @property
     def mines_left(self):
         return self.__mines_left
 

@@ -28,7 +28,87 @@ class Solver:
             self.__deduct()
 
             if self.__game.state is not GameState.PLAY: return
+
+        if self.__glb_deduct() and \
+            self.__game.state is GameState.PLAY:
+            self.__iter()
         
+    def __glb_deduct(self):
+        '''Global deduction based on mines left'''
+        mines_left = self.__game.mines_left
+    # OPEN THE REST
+        if mines_left == 0:
+            for r,c in self.__game.field_coords:
+                if self.__game.item_at(r,c) is Item.UNOPEN:
+                    self.__game.open(r,c, False)
+            return True
+
+        DEPTH = 13
+        eqns = self.__store.get_all()
+        if len(eqns) > DEPTH: return False
+        squares_left = self.__game.safes_left + mines_left
+
+    # DISJOINT DEDUCTION
+        # backtrack to find an disjoint union of equations
+        # which leave the mines left = 0 or = remaining squares
+        used = [False for _ in range(len(eqns))]
+        cursor = 0 # backtrack pointer
+        while True:
+            if cursor < len(eqns):
+                e0 = eqns[cursor]
+                ok = True
+                # not ok if overlap with an used equation
+                for i in range(cursor):
+                    if used[i] and e0.munge(eqns[i], False):
+                        ok = False
+                        break
+                if ok:
+                    # add to disjoint union
+                    mines_left -= e0.mines
+                    squares_left -= bitcnt16(e0.mask)
+                
+                used[cursor] = ok
+                cursor += 1
+                continue
+
+            # reach the end -> found a disjoint union
+            if squares_left > 0 and \
+            (mines_left == 0 or mines_left == squares_left):
+                # print('-> Union: ')
+                # for i,e in enumerate(eqns):
+                #     if used[i]: print(e)
+
+                # can open/flag all squares outside the union
+                f = self.__open if mines_left == 0 else self.__flag
+                for r,c in self.__game.field_coords:
+                    if self.__game.item_at(r,c) is Item.UNOPEN: 
+                        outside = True
+                        e = EQN(r,c,1,0)
+                        for i in range(len(eqns)):
+                            if used[i] and eqns[i].munge(e, False):
+                                outside = False
+                                break
+                        if outside: f(r,c)
+                return True
+
+            cursor -= 1 # why?
+            # find the nearest used eqn
+            while cursor >= 0 and used[cursor] == 0: cursor-=1
+            if cursor < 0: break
+            
+            # BACKTRACK
+            used[cursor] = 0 # unuse the eqn
+
+            # reset mines_left and squares_left
+            e0 = eqns[cursor]
+            mines_left += e0.mines
+            squares_left += bitcnt16(e0.mask)
+
+            cursor += 1
+            continue
+
+        return False
+
     def __process_new(self):
         ''' Based on the new known squares:
             add/remove equations '''
