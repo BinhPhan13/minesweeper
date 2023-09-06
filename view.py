@@ -176,7 +176,7 @@ class GameView(Frame):
         self.__free_preview()
         r,c = self.__grid.handle_click(event)
 
-        first_click = not self.__game.has_data
+        first_click = not self.__game.start_coord
 
         if self.__game.open(r,c):pass
         elif self.__game.auto(r,c):pass
