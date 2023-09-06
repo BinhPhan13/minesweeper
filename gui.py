@@ -6,7 +6,7 @@ from collections import OrderedDict
 
 MODES = OrderedDict([
     ('Easy', Mode(9,9, 10)),
-    ('Medium', Mode(16,16, 100)),
+    ('Medium', Mode(16,16, 40)),
     ('Hard', Mode(16,30, 99)),
     ('Expert', Mode(20,30, 150)),
 ])
@@ -109,11 +109,5 @@ class GUI:
             self.__gameview.destroy()
             self.__build_game()
 
-    def solve(self):
-        from solver import Solver
-        s = Solver(self.__game)
-        s.solve()
-
     def start(self):
-        self.__root.bind('s', lambda _: self.solve())
         self.__root.mainloop()
