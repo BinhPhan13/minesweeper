@@ -37,12 +37,12 @@ class Store:
 
     def get_overlap(self, eqn:EQN):
         return (i for i, node in enumerate(self.__nodes)
-            if eqn.munge(node.eqn, False)
+            if node and eqn.munge(node.eqn, False)
         )
 
     def add(self, eqn:EQN):
         for node in self.__nodes:
-            if node.eqn == eqn: return
+            if node and node.eqn == eqn: return
 
         new_node = _Node(eqn)
         self.__nodes.append(new_node)
@@ -58,7 +58,7 @@ class Store:
     def remove(self, index:int):
         assert index > -1
         self.__remove_todo(self.__nodes[index])
-        del self.__nodes[index]
+        self.__nodes[index] = None
 
     def __remove_todo(self, node:_Node):
         if node.prev:
@@ -73,6 +73,9 @@ class Store:
 
         node.prev = None
         node.next = None
+
+    def clean(self):
+        self.__nodes = [node for node in self.__nodes if node]
 
     def get_eqn(self, index:int):
         assert index > -1

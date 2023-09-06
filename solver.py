@@ -38,11 +38,10 @@ class Solver:
             self.__add_around(r,c)
 
     def __replace_overlaps(self, r:int, c:int):
-        add, rm_index = [], []
         e0 = EQN(r,c,1,0)
         for i in self.__store.get_overlap(e0):
-            rm_index.append(i)
             e1 = self.__store.get_eqn(i)
+            self.__store.remove(i)
 
             new_mines = e1.mines-1 \
             if self.__game.item_at(r,c) is Item.FLAG else e1.mines
@@ -50,11 +49,9 @@ class Solver:
             new_mask = e1.munge(e0, True)
             if not new_mask: continue
             new_eqn = EQN(e1.sr, e1.sc, new_mask, new_mines)
-            add.append(new_eqn)
+            self.__store.add(new_eqn)
 
-        # possible because rm_index is sorted ascendingly
-        while rm_index: self.__store.remove(rm_index.pop())
-        while add: self.__store.add(add.pop())
+        self.__store.clean()
 
     def __add_around(self, r:int, c:int):
         value = self.__game.item_at(r,c).value
