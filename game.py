@@ -219,10 +219,11 @@ class Game:
 
     # functions for modify data (requested by solver)
     def modify(self, eqn):
+        '''Swap mines in unknown squares to make eqn trivial'''
         from eqn import EQN
         assert eqn is None or isinstance(eqn, EQN)
 
-        if not eqn: return self.__dig()
+        if not eqn: return None
 
         # get full(mine)/clear(safe) from given equation's variables
         full, clear = [], []
@@ -282,7 +283,7 @@ class Game:
 
         if not old: # cannot find enough to fill/empty
             assert not new
-            return self.__dig()
+            return None
 
         changes:list[tuple[int,int,bool]] = []
         changes.extend((*pos, False) for pos in old)
@@ -320,7 +321,7 @@ class Game:
             # old mines can either be UNOPEN or FLAG
             # neither are important to adjust the field
     
-    def __dig(self):
+    def dig(self):
         '''Replace a known flag by a unknown safe square'''
         flags, safes = [], []
         for r,c in self.__field.all_coords:
@@ -347,12 +348,7 @@ class Game:
         old = random.choice(flags)
         new = random.choice(safes)
 
-        changes:list[tuple[int,int,int]] = [(*old, False), (*new, True)]
+        changes:list[tuple[int,int,bool]] = [(*old, False), (*new, True)]
         self.__apply(changes)
 
-        # we do not adjust digged flag on field
-        # so we unflag it and open again (no auto for solver)
-        assert self.unflag(*old)
-        assert self.open(*old, False)
-
-        return changes
+        return old # only need to return place of digged flag to solver

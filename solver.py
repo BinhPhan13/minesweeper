@@ -6,51 +6,34 @@ from helper import vicinity, bitcnt16
 class Solver:
     def __init__(self, game:Game):
         self.__game = game
-        self.__todo_sqs:list[tuple[int,int]] = []
         self.__store = Store()
-
-    def __setup(self):
-        self.__todo_sqs.clear()
-        self.__store.clear()
 
     def solve(self):
         if not self.__game.start_coord: return
-        self.__setup()
+        self.__store.clear()
         self.__game.restart(False)
         self.__open(*self.__game.start_coord)
-        
+
         self.__iter()
 
     def __iter(self):
-        while self.__todo_sqs:
-            self.__process_new()
-            assert not self.__todo_sqs
-            self.__deduct()
+        while True:
+            self.__lcl_deduct()
+            if self.done: break
+            if self.__glb_deduct(): continue
 
-            if self.done: return
-
-        if self.__glb_deduct():
-            if not self.done: self.__iter()
-            return
-
-        # reach here means we have to modify the map
-        e = self.__store.pick()
-
-        changes = self.__game.modify(e)
-        if not changes: return
-
-        self.__apply(changes)
-        self.__deduct()
-        if self.done: return
-
-        self.__iter()
+            # reach here means we have to modify the map
+            e = self.__store.pick()
+            changes = self.__game.modify(e)
+            if changes:
+                self.__apply(changes)
+            else:
+                r,c = self.__game.dig()
+                assert self.__game.unflag(r,c)
+                self.__open(r,c)
 
     def __apply(self, changes:list[tuple[int, int, bool]]):
         for r,c, ismine in changes:
-            if self.__game.item_at(r,c) is not Item.UNOPEN:
-                # only for digged up flags
-                self.__todo_sqs.append((r,c))
-
             d = 1 if ismine else -1
             e0 = EQN(r,c,1,0)
             for i in self.__store.get_overlap(e0):
@@ -139,13 +122,79 @@ class Solver:
 
         return False
 
-    def __process_new(self):
-        ''' Based on the new known squares:
-            add/remove equations '''
-        while self.__todo_sqs:
-            r,c = self.__todo_sqs.pop()
-            self.__replace_overlaps(r,c)
-            self.__add_around(r,c)
+    def __lcl_deduct(self):
+        '''Process equations from todo list'''
+        while True:
+            if self.done: break
+            e0 = self.__store.fetch()
+            if not e0: break
+
+            if self.__try_basic(e0): continue
+            if self.__try_subtract(e0): continue
+
+    def __try_basic(self, e0:EQN):
+        do_sth = True
+        # if mines = 0 -> open all
+        if e0.mines == 0:
+            for r,c in e0.vars_pos: self.__open(r,c)
+        # if mines = number of variables -> flag all
+        elif e0.mines == bitcnt16(e0.mask):
+            for r,c in e0.vars_pos: self.__flag(r,c)
+        else: do_sth = False
+
+        return do_sth
+
+    def __try_subtract(self, e0:EQN):
+        for i in self.__store.get_overlap(e0):
+            e1 = self.__store.get_eqn(i)
+            w0 = e0.munge(e1, True)
+            w1 = e1.munge(e0, True)
+
+            if w0 and w1:
+                w0cnt = bitcnt16(w0)
+                w1cnt = bitcnt16(w1)
+
+                w0_eqn = EQN(e0.sr, e0.sc, w0, 0)
+                w1_eqn = EQN(e1.sr, e1.sc, w1, 0)
+
+                flag_eqn, open_eqn = None, None
+                if w0cnt == e0.mines-e1.mines:
+                    flag_eqn, open_eqn = w0_eqn, w1_eqn
+                elif w1cnt == e1.mines-e0.mines:
+                    flag_eqn, open_eqn = w1_eqn, w0_eqn
+
+                # why flag before open ..?
+                if flag_eqn and open_eqn:
+                    for r,c in flag_eqn.vars_pos: self.__flag(r,c)
+                    for r,c in open_eqn.vars_pos: self.__open(r,c)
+                    return True
+            # e1 is subset of e0
+            elif w0:
+                sub_mines = e0.mines-e1.mines
+                assert sub_mines >= 0
+                new_eqn = EQN(e0.sr, e0.sc, w0, sub_mines)
+                self.__store.add(new_eqn)
+            # e0 is subset of e1
+            elif w1:
+                sub_mines = e1.mines-e0.mines
+                assert sub_mines >= 0
+                new_eqn = EQN(e1.sr, e1.sc, w1, sub_mines)
+                self.__store.add(new_eqn)
+
+        return False
+
+    def __open(self, row:int, col:int):
+        assert self.__game.open(row,col, False)
+        self.__process_new(row,col)
+
+    def __flag(self, row:int, col:int):
+        assert self.__game.flag(row,col)
+        self.__process_new(row,col)
+
+    def __process_new(self, row:int, col:int):
+        '''Add/remove equations based on newly known square at row,col'''
+        self.__replace_overlaps(row,col)
+        self.__add_around(row,col)
 
     def __replace_overlaps(self, r:int, c:int):
         e0 = EQN(r,c,1,0)
@@ -179,73 +228,6 @@ class Solver:
         if not mask: return
         new_eqn = EQN(r-1,c-1, mask, mines)
         self.__store.add(new_eqn)
-
-    def __deduct(self):
-        ''' Consider equations from todo list:
-            open/flag squares if successful '''
-        while True:
-            e0 = self.__store.fetch()
-            if not e0: break
-            if self.__try_basic(e0): break
-            if self.__try_subtract(e0): break
-
-    def __try_basic(self, e0:EQN):
-        do_sth = True
-        # if mines = 0 -> open all
-        if e0.mines == 0:
-            for r,c in e0.vars_pos: self.__open(r,c)
-        # if mines = number of variables -> flag all
-        elif e0.mines == bitcnt16(e0.mask):
-            for r,c in e0.vars_pos: self.__flag(r,c)
-        else: do_sth = False
-
-        return do_sth
-
-    def __try_subtract(self, e0:EQN):
-        for i in self.__store.get_overlap(e0):
-            e1 = self.__store.get_eqn(i)
-            w0 = e0.munge(e1, True)
-            w1 = e1.munge(e0, True)
-
-            if w0 and w1:
-                w0cnt = bitcnt16(w0)
-                w1cnt = bitcnt16(w1)
-
-                w0_eqn = EQN(e0.sr, e0.sc, w0, 0)
-                w1_eqn = EQN(e1.sr, e1.sc, w1, 0)
-
-                flag_eqn, open_eqn = None, None
-                if w0cnt == e0.mines-e1.mines:
-                    flag_eqn, open_eqn = w0_eqn, w1_eqn
-                elif w1cnt == e1.mines-e0.mines:
-                    flag_eqn, open_eqn = w1_eqn, w0_eqn
-
-                if flag_eqn and open_eqn:
-                    for r,c in flag_eqn.vars_pos: self.__flag(r,c)
-                    for r,c in open_eqn.vars_pos: self.__open(r,c)
-                    return True
-            # e1 is subset of e0
-            elif w0:
-                sub_mines = e0.mines-e1.mines
-                assert sub_mines >= 0
-                new_eqn = EQN(e0.sr, e0.sc, w0, sub_mines)
-                self.__store.add(new_eqn)
-            # e0 is subset of e1
-            elif w1:
-                sub_mines = e1.mines-e0.mines
-                assert sub_mines >= 0
-                new_eqn = EQN(e1.sr, e1.sc, w1, sub_mines)
-                self.__store.add(new_eqn)
-
-        return False
-
-    def __open(self, row:int, col:int):
-        assert self.__game.open(row,col, False)
-        self.__todo_sqs.append((row,col))
-
-    def __flag(self, row:int, col:int):
-        assert self.__game.flag(row,col)
-        self.__todo_sqs.append((row,col))
 
     @property
     def done(self):
