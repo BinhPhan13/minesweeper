@@ -30,15 +30,15 @@ class _Node:
 
 class Store:
     def __init__(self):
-        self.__nodes:list[_Node] = []
+        self.__nodes:list[_Node|None] = []
         # doubly linked todo list
         self.__head:_Node = None
         self.__tail:_Node = None
 
     def get_overlap(self, eqn:EQN):
-        return (i for i, node in enumerate(self.__nodes)
+        return [i for i, node in enumerate(self.__nodes)
             if node and eqn.munge(node.eqn, False)
-        )
+        ]
 
     def add(self, eqn:EQN):
         for node in self.__nodes:
