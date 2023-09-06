@@ -222,8 +222,9 @@ class Game:
         from eqn import EQN
         assert eqn is None or isinstance(eqn, EQN)
 
-        if not eqn: return None
+        if not eqn: return self.__dig()
 
+        # get full(mine)/clear(safe) from given equation's variables
         full, clear = [], []
         for r,c in eqn.vars_pos:
             assert self.__field[r,c] is Item.UNOPEN
@@ -231,8 +232,11 @@ class Game:
                 full.append((r,c))
             else: clear.append((r,c))
 
+        # must contain both, else it is trivial
         assert full and clear
         
+        # get candidates to swap with full/clear above, must be unopen
+        # prioritize 'near' squares, which has contact with known squares
         near, far = [], []
         for r,c in self.__field.all_coords:
             if eqn.munge(EQN(r,c,1,0), False): continue
@@ -257,8 +261,12 @@ class Game:
         else: random.shuffle(far)
 
         usable = near + far
+
+        # get list of squares to be filled/emptied
+        # full squares fill in filled squares
+        # clear squares get mines from emptied squares
         fill, empty = [], [] 
-        old, new = None, None
+        old, new = None, None # coordinates of old and new mines
 
         for r,c in usable:
             if self.__data[r,c] == -1:
@@ -274,7 +282,7 @@ class Game:
 
         if not old: # cannot find enough to fill/empty
             assert not new
-            return None
+            return self.__dig()
 
         changes:list[tuple[int,int,bool]] = []
         changes.extend((*pos, False) for pos in old)
@@ -284,6 +292,7 @@ class Game:
         return changes
 
     def __apply(self, changes:list[tuple[int,int,bool]]):
+        '''Adjust data and field on changes'''
         for r,c, ismine in changes:
             self.__data[r,c] = -1 if ismine else -2
 
@@ -308,5 +317,42 @@ class Game:
                     v += 1
             self.__data[r,c] = v
 
-            if self.__field[r,c] is not Item.UNOPEN:
-                self.__adjust(r,c, Item(self.__data[r,c]))
+            # old mines can either be UNOPEN or FLAG
+            # neither are important to adjust the field
+    
+    def __dig(self):
+        '''Replace a known flag by a unknown safe square'''
+        flags, safes = [], []
+        for r,c in self.__field.all_coords:
+            if self.__field[r,c] is Item.FLAG:
+                # make sure the flag connect between
+                # a safe known square and an unopen square
+                has_safe, has_unopen = False, False
+                for i,j in vicinity(r,c):
+                    if not self.__field.valid_bound(i,j): continue
+                    if self.__field[i,j] is Item.UNOPEN:
+                        has_unopen = True
+                    elif self.__field[i,j].value >= 0:
+                        assert self.__field[i,j].value > 0
+                        has_safe = True
+
+                    if has_safe and has_unopen:
+                        flags.append((r,c))
+                        break
+
+            elif self.__field[r,c] is Item.UNOPEN \
+            and self.__data[r,c] != -1:
+                safes.append((r,c))
+
+        old = random.choice(flags)
+        new = random.choice(safes)
+
+        changes:list[tuple[int,int,int]] = [(*old, False), (*new, True)]
+        self.__apply(changes)
+
+        # we do not adjust digged flag on field
+        # so we unflag it and open again (no auto for solver)
+        assert self.unflag(*old)
+        assert self.open(*old, False)
+
+        return changes

@@ -47,6 +47,10 @@ class Solver:
 
     def __apply(self, changes:list[tuple[int, int, bool]]):
         for r,c, ismine in changes:
+            if self.__game.item_at(r,c) is not Item.UNOPEN:
+                # only for digged up flags
+                self.__todo_sqs.append((r,c))
+
             d = 1 if ismine else -1
             e0 = EQN(r,c,1,0)
             for i in self.__store.get_overlap(e0):
