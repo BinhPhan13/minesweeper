@@ -150,7 +150,7 @@ class Timer(Label):
         return self.__num_laps*self.__laps/1000
 
 class GameView(Frame):
-    def __init__(self, master, game:Game):
+    def __init__(self, master, game:Game, record:list):
         super().__init__(master)
         self.__game = game
         mode = self.__game.mode
@@ -174,11 +174,13 @@ class GameView(Frame):
         self.__sttbar.pack(fill=X, side=RIGHT, expand=True)
         self.adjust_stt()
 
-        self.__timer = Timer(self)
+        self.__timer = Timer(self, 1)
         self.__timer.config(bg='#c0c0c0',
             highlightthickness=1, highlightbackground='#a0a0a0'
         )
         self.__timer.pack(fill=X, side=LEFT)
+
+        self.__record = record
 
     def lclick(self, event:Event):
         self.__free_preview()
@@ -188,12 +190,19 @@ class GameView(Frame):
 
         if self.__game.open(r,c):pass
         elif self.__game.auto(r,c):pass
+        else: return
         self.adjust_stt()
         
         if first_click: self.__timer.start()
 
-        if self.__game.state is not GameState.PLAY:
+        state = self.__game.state
+        if state is not GameState.PLAY:
             self.__timer.stop()
+            if state is GameState.WIN:
+                self.__add_record(self.__timer.elapsed_time)
+
+    def __add_record(self, playtime:float):
+        self.__record.append(playtime)
 
     def rclick(self, event:Event):
         r,c = self.__grid.handle_click(event)

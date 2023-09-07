@@ -1,5 +1,7 @@
 from game import Game, Mode
 from view import GameView
+
+import json
 from tkinter import *
 from tkinter import font
 from collections import OrderedDict
@@ -10,12 +12,15 @@ MODES = OrderedDict([
     ('Hard', Mode(16,30, 99)),
     ('Expert', Mode(20,30, 150)),
 ])
+RECORDS_FILE = 'records.json'
 
 class GUI:
     def __init__(self):
+        self.__load_records()
         self.__root = Tk()
         self.__root.resizable(False,False)
         self.__root.title('Mines')
+        self.__root.protocol('WM_DELETE_WINDOW', self.__exit)
 
         self.__mainframe = Frame(self.__root)
         self.__mainframe.pack()
@@ -23,7 +28,6 @@ class GUI:
         self.__build_menu()
         self.__build_config()
 
-        self.__mode = MODES['Easy']
         self.__build_game()
 
     def __build_menu(self):
@@ -93,8 +97,13 @@ class GUI:
         )
 
     def __build_game(self):
-        self.__game = Game(self.__mode)
-        self.__gameview = GameView(self.__mainframe, self.__game)
+        mode = self.__choice.get()
+
+        self.__game = Game(MODES[mode])
+        self.__gameview = GameView(
+            self.__mainframe, self.__game,
+            self.__records[mode]
+        )
         self.__game.setview(self.__gameview)
         self.__gameview.pack()
 
@@ -109,12 +118,28 @@ class GUI:
         self.__config_frame.forget()
         self.__mainframe.pack()
 
-        mode = MODES[self.__choice.get()]
-        if mode == self.__mode: self.__newgame()
+        mode = self.__choice.get()
+        if MODES[mode] == self.__game.mode: self.__newgame()
         else:
-            self.__mode = mode
             self.__gameview.destroy()
             self.__build_game()
 
+    def __load_records(self):
+        try:
+            f = open(RECORDS_FILE, 'r')
+            records:dict[str,list] = json.loads(f.readline())
+            f.close()
+        except: records = {mode:[] for mode in MODES}
+        self.__records = records
+    
+    def __dump_records(self):
+        f = open(RECORDS_FILE, 'w')
+        f.write(json.dumps(self.__records))
+        f.close()
+
     def start(self):
         self.__root.mainloop()
+    
+    def __exit(self):
+        self.__dump_records()
+        self.__root.destroy()
