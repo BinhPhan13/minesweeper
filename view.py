@@ -110,36 +110,44 @@ class Timer(Label):
 
         return f'{mins:0>2}:{secs:0>2}'
 
-    def __init__(self, master):
-        self.__elapsed_secs = 0
+    def __init__(self, master, laps:int=1000):
         self.__time_var = StringVar()
         super().__init__(master)
         self.config(
             textvariable=self.__time_var,
             font=font.Font(size=13),
         )
+        assert isinstance(laps, int)
+        self.__laps = max(1, laps)
         self.reset()
 
     def start(self):
         self.__ended = False
-        self.after(1000, self.__count)
+        self.after(self.__laps, self.__count)
 
     def __count(self):
         if self.__ended: return
-        self.__elapsed_secs += 1
+        self.__num_laps += 1
         self.__adjust()
-        self.after(1000, self.__count)
+        self.after(self.__laps, self.__count)
 
     def stop(self):
         self.__ended = True
 
     def reset(self):
         self.stop()
-        self.__elapsed_secs = 0
+        self.__num_laps = 0
         self.__adjust()
 
     def __adjust(self):
-        self.__time_var.set(f'[{Timer.sec2min(self.__elapsed_secs)}]')
+        display_time = Timer.sec2min(
+            int(self.elapsed_time)
+        )
+        self.__time_var.set(f'[{display_time}]')
+
+    @property
+    def elapsed_time(self):
+        return self.__num_laps*self.__laps/1000
 
 class GameView(Frame):
     def __init__(self, master, game:Game):
