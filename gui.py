@@ -53,6 +53,7 @@ class GUI:
             text='Records',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
+            command=self.__show_records
         )
         blah.grid(row=0, column=2)
 
@@ -129,13 +130,48 @@ class GUI:
             f = open(RECORDS_FILE, 'r')
             records:dict[str,list] = json.loads(f.readline())
             f.close()
-        except: records = {mode:[] for mode in MODES}
+        except FileNotFoundError: records = {mode:[] for mode in MODES}
         self.__records = records
     
     def __dump_records(self):
+        # trim records to 20 each (suitable to show records)
+        for k in self.__records:
+            record = self.__records[k]
+            record = record[:20]
+
         f = open(RECORDS_FILE, 'w')
         f.write(json.dumps(self.__records))
         f.close()
+
+    def __show_records(self):
+        mode = self.__choice.get()
+        record = self.__records[mode]
+
+        top = Toplevel(self.__root, bg='red')
+        top.title(f'{mode} records')
+        top.resizable(False, False)
+
+        h, w = 10, 2
+        for j in range(w):
+            for i in range(h):
+                label = Label(top, width=20,
+                    highlightthickness=1,
+                    highlightbackground='#a0a0a0',
+                )
+                label.grid(row=i, column=j)
+
+                index = i+j*h
+                text = f'{index+1}. '
+                try:
+                    date, playtime = record[index]
+                    from view import Timer
+                    display_time = Timer.sec2min(int(playtime))
+                    text += f'{date:15}{display_time}'
+                except: pass
+
+                label.config(text=text, anchor=W,
+                    font=font.Font(size=10)
+                )
 
     def start(self):
         self.__root.mainloop()

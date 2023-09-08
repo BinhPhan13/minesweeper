@@ -202,7 +202,10 @@ class GameView(Frame):
                 self.__add_record(self.__timer.elapsed_time)
 
     def __add_record(self, playtime:float):
-        self.__record.append(playtime)
+        from helper import repr_today
+        rec = repr_today(), playtime
+        self.__record.append(rec)
+        self.__record.sort(key=lambda x:x[1])
 
     def rclick(self, event:Event):
         r,c = self.__grid.handle_click(event)

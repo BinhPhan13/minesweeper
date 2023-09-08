@@ -1,4 +1,6 @@
 from PIL import Image
+import datetime
+import calendar
 
 IMG_DIR = 'images/'
 def get_img(file:str, size:tuple[int,int]):
@@ -23,6 +25,15 @@ def bitcnt16(word:int):
     word = ((word>>4)&0x0707) + (word&0x0707)
     word = ((word>>8)&0x000F) + (word&0x000F)
     return word
+
+def repr_today():
+    today = datetime.date.today()
+
+    d = today.day
+    m = calendar.month_abbr[today.month]
+    y = today.year
+
+    return f'{d} {m} {y}'
 
 WS = ' '
 BR = '\n'
