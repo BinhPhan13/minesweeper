@@ -33,7 +33,7 @@ def repr_today():
     m = calendar.month_abbr[today.month]
     y = today.year
 
-    return f'{d} {m} {y}'
+    return f'{d:0>2} {m} {y}'
 
 WS = ' '
 BR = '\n'

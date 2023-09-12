@@ -49,13 +49,12 @@ class GUI:
         )
         self.__newgame_button.grid(row=0, column=1)
 
-        blah = Button(menubar,
+        Button(menubar,
             text='Records',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
             command=self.__show_records
-        )
-        blah.grid(row=0, column=2)
+        ).grid(row=0, column=2)
 
     def __build_config(self):
         self.__config_frame = Frame(self.__root)
@@ -161,7 +160,7 @@ class GUI:
                 label.grid(row=i, column=j)
 
                 index = i+j*h
-                text = f'{index+1}. '
+                text = f'{index+1:0>2}. '
                 try:
                     date, playtime = record[index]
                     from view import Timer
