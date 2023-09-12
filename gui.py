@@ -165,7 +165,7 @@ class GUI:
                 try:
                     date, playtime = record[index]
                     from view import Timer
-                    display_time = Timer.sec2min(int(playtime))
+                    display_time = Timer.sec2min(playtime)
                     text += f'{date:15}{display_time}'
                 except: pass
 

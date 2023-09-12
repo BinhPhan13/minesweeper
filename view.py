@@ -1,6 +1,9 @@
 from helper import get_img, vicinity
 from game import Item, GameState, Game
 
+from time import time
+from math import floor
+
 from tkinter import *
 from tkinter import font
 from PIL import ImageTk
@@ -103,7 +106,8 @@ class _SttBar(Label):
 
 class Timer(Label):
     @staticmethod
-    def sec2min(seconds:int):
+    def sec2min(seconds:float):
+        seconds = floor(seconds)
         mins = seconds//60
         secs = seconds%60
         if mins > 99: mins, secs = 99, 59
@@ -117,38 +121,40 @@ class Timer(Label):
             textvariable=self.__time_var,
             font=font.Font(size=13),
         )
-        assert isinstance(laps, int)
-        self.__laps = max(1, laps)
-        self.reset()
+        self.__laps = laps
+        # stored seconds and started time
+        self.__time = 0.0
+        self.__stime = -0.1
+        self.__adjust()
 
     def start(self):
-        self.__ended = False
+        self.__stime = time()
         self.after(self.__laps, self.__count)
 
     def __count(self):
-        if self.__ended: return
-        self.__num_laps += 1
         self.__adjust()
+        if self.__stime < 0: return
         self.after(self.__laps, self.__count)
 
     def stop(self):
-        self.__ended = True
+        self.__time = self.elapsed_time
+        self.__stime = -0.1
+        self.__adjust()
 
     def reset(self):
         self.stop()
-        self.__num_laps = 0
+        self.__time = 0.0
         self.__adjust()
 
     def __adjust(self):
-        display_time = Timer.sec2min(
-            int(self.elapsed_time)
-        )
+        display_time = Timer.sec2min(self.elapsed_time)
         self.__time_var.set(f'[{display_time}]')
 
     @property
     def elapsed_time(self):
-        return self.__num_laps*self.__laps/1000
-
+        return self.__time if self.__stime < 0 \
+        else self.__time + time() - self.__stime
+    
 class GameView(Frame):
     def __init__(self, master, game:Game, record:list):
         super().__init__(master)
@@ -174,7 +180,7 @@ class GameView(Frame):
         self.__sttbar.pack(fill=X, side=RIGHT, expand=True)
         self.adjust_stt()
 
-        self.__timer = Timer(self, 1)
+        self.__timer = Timer(self)
         self.__timer.config(bg='#c0c0c0',
             highlightthickness=1, highlightbackground='#a0a0a0'
         )
