@@ -114,14 +114,14 @@ class Timer(Label):
 
         return f'{mins:0>2}:{secs:0>2}'
 
-    def __init__(self, master, laps:int=1000):
+    def __init__(self, master):
         self.__time_var = StringVar()
         super().__init__(master)
         self.config(
             textvariable=self.__time_var,
             font=font.Font(size=13),
         )
-        self.__laps = laps
+        self.__laps = 1000
         # stored seconds and started time
         self.__time = 0.0
         self.__stime = -0.1
