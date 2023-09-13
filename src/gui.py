@@ -21,7 +21,6 @@ class GUI:
         self.__root = Tk()
         self.__root.resizable(False,False)
         self.__root.title('Mines')
-        self.__root.protocol('WM_DELETE_WINDOW', self.__exit)
 
         self.__mainframe = Frame(self.__root)
         self.__mainframe.pack()
@@ -56,6 +55,13 @@ class GUI:
             relief=FLAT,
             command=self.__show_records
         ).grid(row=0, column=2)
+
+        Button(menubar,
+            text='Exit',
+            font=font.Font(size=10, weight=font.BOLD),
+            relief=FLAT,
+            command=self.__exit
+        ).grid(row=0, column=3)
 
     def __build_config(self):
         self.__config_frame = Frame(self.__root)
@@ -131,7 +137,6 @@ class GUI:
         self.__records = records
     
     def __dump_records(self):
-        # return
         # trim records to 20 each (suitable to show records)
         for k in self.__records:
             record = self.__records[k]
