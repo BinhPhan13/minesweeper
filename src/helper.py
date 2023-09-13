@@ -1,8 +1,9 @@
+from __init__ import EXE_DIR
 from PIL import Image
 import datetime
 import calendar
 
-IMG_DIR = 'images/'
+IMG_DIR = EXE_DIR + 'images/'
 def get_img(file:str, size:tuple[int,int]):
     return Image.open(IMG_DIR+file).resize(
         size, Image.LANCZOS)

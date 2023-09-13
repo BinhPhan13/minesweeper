@@ -1,5 +1,6 @@
 from game import Game, Mode
 from view import GameView
+from __init__ import EXE_DIR
 
 import json
 from tkinter import *
@@ -10,9 +11,9 @@ MODES = OrderedDict([
     ('Easy', Mode(9,9, 10)),
     ('Medium', Mode(16,16, 40)),
     ('Hard', Mode(16,30, 99)),
-    ('Expert', Mode(20,30, 150)),
+    ('Expert', Mode(20,30, 180)),
 ])
-RECORDS_FILE = 'records.json'
+RECORDS_FILE = EXE_DIR + 'src/records.json'
 
 class GUI:
     def __init__(self):
@@ -118,11 +119,8 @@ class GUI:
         self.__config_frame.forget()
         self.__mainframe.pack()
 
-        mode = self.__choice.get()
-        if MODES[mode] == self.__game.mode: self.__newgame()
-        else:
-            self.__gameview.destroy()
-            self.__build_game()
+        self.__gameview.destroy()
+        self.__build_game()
 
     def __load_records(self):
         try:
@@ -133,6 +131,7 @@ class GUI:
         self.__records = records
     
     def __dump_records(self):
+        # return
         # trim records to 20 each (suitable to show records)
         for k in self.__records:
             record = self.__records[k]
