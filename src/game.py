@@ -232,12 +232,13 @@ class Game:
         return self.__start_coord
 
     # functions for modify data (requested by solver)
-    def modify(self, eqn):
-        '''Swap mines in unknown squares to make eqn trivial'''
-        from eqn import EQN
-        assert eqn is None or isinstance(eqn, EQN)
+    def modify(self, store):
+        '''Swap mines in unknown squares to make an eqn from store trivial'''
+        from store import Store, EQN
+        assert isinstance(store, Store)
 
-        if not eqn: return None
+        eqn = store.pick()
+        if not eqn: return False
 
         # get full(mine)/clear(safe) from given equation's variables
         full, clear = [], []
@@ -297,14 +298,27 @@ class Game:
 
         if not old: # cannot find enough to fill/empty
             assert not new
-            return None
+            return False
 
         changes:list[tuple[int,int,bool]] = []
         changes.extend((*pos, False) for pos in old)
         changes.extend((*pos, True) for pos in new)
 
+        # update equations in store
+        for r,c, ismine in changes:
+            d = 1 if ismine else -1
+            e0 = EQN(r,c,1,0)
+            for i in store.get_overlap(e0):
+                e1 = store.get_eqn(i)
+                store.remove(i)
+
+                new_mines = e1.mines + d
+                new_eqn = EQN(e1.sr, e1.sc, e1.mask, new_mines)
+                store.add(new_eqn)
+            store.clean()
+
         self.__apply(changes)
-        return changes
+        return True
 
     def __apply(self, changes:list[tuple[int,int,bool]]):
         '''Adjust data and field on changes'''

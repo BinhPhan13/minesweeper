@@ -20,39 +20,20 @@ class Solver:
 
     def __iter(self):
         while True:
-            self.__lcl_deduct()
             if self.done: break
+            if self.__lcl_deduct(): continue
             if self.__glb_deduct(): continue
+            if self.__game.modify(self.__store): continue
 
-            # reach here means we have to modify the map
-            e = self.__store.pick()
-            changes = self.__game.modify(e)
-            if changes:
-                self.__apply(changes)
-            else:
-                r,c = self.__game.dig()
-                assert self.__game.unflag(r,c)
-                self.__open(r,c)
+            r,c = self.__game.dig()
+            assert self.__game.unflag(r,c)
+            self.__open(r,c)
 
-                # digging got potential to make the map unsolvable
-                # since it change a known square
-                # --> try again
-                self.__clear = False
+            # digging got potential to make the map unsolvable
+            # since it modify a known square --> not clear
+            self.__clear = False
+            break
 
-    def __apply(self, changes:list[tuple[int, int, bool]]):
-        for r,c, ismine in changes:
-            d = 1 if ismine else -1
-            e0 = EQN(r,c,1,0)
-            for i in self.__store.get_overlap(e0):
-                e1 = self.__store.get_eqn(i)
-                self.__store.remove(i)
-
-                new_mines = e1.mines + d
-                new_eqn = EQN(e1.sr, e1.sc, e1.mask, new_mines)
-                self.__store.add(new_eqn)
-
-            self.__store.clean()
-        
     def __glb_deduct(self):
         '''Global deduction based on mines left'''
         mines_left = self.__game.mines_left
@@ -132,9 +113,9 @@ class Solver:
     def __lcl_deduct(self):
         '''Process equations from todo list'''
         while True:
-            if self.done: break
+            if self.done: return True
             e0 = self.__store.fetch()
-            if not e0: break
+            if not e0: return False
 
             if self.__try_basic(e0): continue
             if self.__try_subtract(e0): continue
@@ -157,6 +138,7 @@ class Solver:
             w0 = e0.munge(e1, True)
             w1 = e1.munge(e0, True)
 
+            do_sth = True
             if w0 and w1:
                 w0cnt = bitcnt16(w0)
                 w1cnt = bitcnt16(w1)
@@ -174,7 +156,7 @@ class Solver:
                 if flag_eqn and open_eqn:
                     for r,c in flag_eqn.vars_pos: self.__flag(r,c)
                     for r,c in open_eqn.vars_pos: self.__open(r,c)
-                    return True
+                else: do_sth = False
             # e1 is subset of e0
             elif w0:
                 sub_mines = e0.mines-e1.mines
@@ -187,6 +169,9 @@ class Solver:
                 assert sub_mines >= 0
                 new_eqn = EQN(e1.sr, e1.sc, w1, sub_mines)
                 self.__store.add(new_eqn)
+            else: do_sth = False
+
+            if do_sth: return True
 
         return False
 
