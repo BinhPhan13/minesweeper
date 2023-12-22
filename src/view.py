@@ -1,8 +1,7 @@
-from helper import get_img, vicinity
+from helper import get_img, vicinity, sec2min
 from game import Item, GameState, Game
 
 from time import time
-from math import floor
 
 from tkinter import *
 from tkinter import font
@@ -105,15 +104,6 @@ class _SttBar(Label):
         self.__stt.set(stt)
 
 class Timer(Label):
-    @staticmethod
-    def sec2min(seconds:float):
-        seconds = floor(seconds)
-        mins = seconds//60
-        secs = seconds%60
-        if mins > 99: mins, secs = 99, 59
-
-        return f'{mins:0>2}:{secs:0>2}'
-
     def __init__(self, master):
         self.__time_var = StringVar()
         super().__init__(master)
@@ -147,14 +137,14 @@ class Timer(Label):
         self.__adjust()
 
     def __adjust(self):
-        display_time = Timer.sec2min(self.elapsed_time)
+        display_time = sec2min(self.elapsed_time)
         self.__time_var.set(f'[{display_time}]')
 
     @property
     def elapsed_time(self):
         return self.__time if self.__stime < 0 \
         else self.__time + time() - self.__stime
-    
+
 class GameView(Frame):
     def __init__(self, master, game:Game, record:list):
         super().__init__(master)
@@ -198,7 +188,7 @@ class GameView(Frame):
         elif self.__game.auto(r,c):pass
         else: return
         self.adjust_stt()
-        
+
         if first_click: self.__timer.start()
 
         state = self.__game.state

@@ -80,7 +80,7 @@ class EQN:
     @property
     def sc(self):
         return self.__sc
-        
+
     @property
     def mask(self):
         return self.__mask

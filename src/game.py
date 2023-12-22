@@ -131,7 +131,7 @@ class Game:
         else:
             self.__adjust(row, col, Item(self.__data[row,col]))
             self.__safes_left -= 1
-            
+
             assert self.safes_left >= 0
             if self.safes_left == 0: # win
                 for r,c in self.__field.all_coords:
@@ -155,7 +155,7 @@ class Game:
 
     def unflag(self, row:int, col:int):
         if not self.__valid_action(row,col): return False
-        if self.__field[row,col] is not Item.FLAG: return False 
+        if self.__field[row,col] is not Item.FLAG: return False
 
         self.__adjust(row, col, Item.UNOPEN)
         self.__mines_left += 1
@@ -188,7 +188,7 @@ class Game:
     def restart(self, new:bool=True):
         for r,c in self.__field.all_coords:
             self.__adjust(r,c, Item.UNOPEN)
-        
+
         self.__mines_left = self.mode.mines
         self.__safes_left = self.mode.num_safes
         self.__state = GameState.PLAY
@@ -226,7 +226,7 @@ class Game:
     @property
     def mode(self):
         return self.__mode
-    
+
     @property
     def start_coord(self):
         return self.__start_coord
@@ -250,7 +250,7 @@ class Game:
 
         # must contain both, else it is trivial
         assert full and clear
-        
+
         # get candidates to swap with full/clear above, must be unopen
         # prioritize 'near' squares, which has contact with known squares
         near, far = [], []
@@ -281,7 +281,7 @@ class Game:
         # get list of squares to be filled/emptied
         # full squares fill in filled squares
         # clear squares get mines from emptied squares
-        fill, empty = [], [] 
+        fill, empty = [], []
         old, new = None, None # coordinates of old and new mines
 
         for r,c in usable:
@@ -348,7 +348,7 @@ class Game:
 
             # old mines can either be UNOPEN or FLAG
             # neither are important to adjust the field
-    
+
     def dig(self):
         '''Replace a known flag by a unknown safe square'''
         flags, safes = [], []

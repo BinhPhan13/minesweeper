@@ -2,6 +2,7 @@ from __init__ import EXE_DIR
 from PIL import Image
 import datetime
 import calendar
+from math import floor
 
 IMG_DIR = EXE_DIR + 'images/'
 def get_img(file:str, size:tuple[int,int]):
@@ -36,6 +37,15 @@ def repr_today():
 
     return f'{d:0>2} {m} {y}'
 
+def sec2min(seconds:float):
+    seconds = floor(seconds)
+    mins = seconds//60
+    secs = seconds%60
+    if mins > 99: mins, secs = 99, 59
+
+    return f'{mins:0>2}:{secs:0>2}'
+
+
 WS = ' '
 BR = '\n'
 class Board:
@@ -58,7 +68,7 @@ class Board:
         if not self.valid_bound(r,c):
             raise IndexError(f'index out of range {r,c}')
         self.__data[r][c] = v
-        
+
     def valid_bound(self, row:int, col:int):
         return in_range(row, -1, self.__h) \
             and in_range(col, -1, self.__w)

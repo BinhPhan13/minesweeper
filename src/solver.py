@@ -67,7 +67,7 @@ class Solver:
                     # add to disjoint union
                     mines_left -= e0.mines
                     squares_left -= bitcnt16(e0.mask)
-                
+
                 used[cursor] = ok
                 cursor += 1
                 continue
@@ -82,7 +82,7 @@ class Solver:
                 # can open/flag all squares outside the union
                 f = self.__open if mines_left == 0 else self.__flag
                 for r,c in self.__game.field_coords:
-                    if self.__game.item_at(r,c) is Item.UNOPEN: 
+                    if self.__game.item_at(r,c) is Item.UNOPEN:
                         outside = True
                         e = EQN(r,c,1,0)
                         for i in range(len(eqns)):
@@ -96,7 +96,7 @@ class Solver:
             # find the nearest used eqn
             while cursor >= 0 and used[cursor] == 0: cursor-=1
             if cursor < 0: break
-            
+
             # BACKTRACK
             used[cursor] = 0 # unuse the eqn
 

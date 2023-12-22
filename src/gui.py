@@ -1,6 +1,7 @@
 from game import Game, Mode
 from view import GameView
 from __init__ import EXE_DIR
+from helper import sec2min
 
 import json
 from tkinter import *
@@ -41,6 +42,7 @@ class GUI:
             command=self.__choose_mode
         )
         self.__mode_button.grid(row=0, column=0)
+
         self.__newgame_button = Button(menubar,
             text='New game',
             font=font.Font(size=10, weight=font.BOLD),
@@ -65,7 +67,7 @@ class GUI:
 
     def __build_config(self):
         self.__config_frame = Frame(self.__root)
-        
+
         titles = [s.capitalize() for s in Mode.ATTRS]
         for j, title in enumerate(titles):
             Label(self.__config_frame, bg='#d0d0d0',
@@ -74,16 +76,16 @@ class GUI:
 
         # modes
         self.__choice = StringVar(value='Easy')
-        for i, description in enumerate(MODES):
+        for i, mode in enumerate(MODES):
             Radiobutton(self.__config_frame,
                 anchor=W, width=8,
-                text=description,
-                value=description,
+                text=mode,
+                value=mode,
                 variable=self.__choice,
             ).grid(row=i+1, column=0, sticky=NSEW)
 
             for j, attr in enumerate(Mode.ATTRS):
-                v = getattr(MODES[description], attr)
+                v = getattr(MODES[mode], attr)
                 widget = Label(self.__config_frame, text=v)
                 widget.configure(bg='white')
                 widget.grid(row=i+1, column=j+1, sticky=NSEW)
@@ -130,25 +132,23 @@ class GUI:
 
     def __load_records(self):
         try:
-            f = open(RECORDS_FILE, 'r')
-            records:dict[str,list] = json.loads(f.readline())
+            f = open(RECORDS_FILE)
+            self.__records = json.load(f)
             f.close()
-        except FileNotFoundError: records = {mode:[] for mode in MODES}
-        self.__records = records
-    
-    def __dump_records(self):
-        # trim records to 20 each (suitable to show records)
-        for k in self.__records:
-            record = self.__records[k]
-            record = record[:20]
+        except FileNotFoundError:
+            self.__records = {mode:[] for mode in MODES}
 
-        f = open(RECORDS_FILE, 'w')
-        f.write(json.dumps(self.__records))
-        f.close()
+    def __dump_records(self):
+        # trim to 20 records each mode
+        for mode_records in self.__records.values():
+            mode_records = mode_records[:20]
+
+        with open(RECORDS_FILE, 'w') as f:
+            f.write(json.dumps(self.__records))
 
     def __show_records(self):
         mode = self.__choice.get()
-        record = self.__records[mode]
+        mode_records = self.__records[mode]
 
         top = Toplevel(self.__root, bg='red')
         top.title(f'{mode} records')
@@ -157,20 +157,19 @@ class GUI:
         h, w = 10, 2
         for j in range(w):
             for i in range(h):
-                label = Label(top, width=20,
+                label = Label(top, width=30,
                     highlightthickness=1,
                     highlightbackground='#a0a0a0',
                 )
                 label.grid(row=i, column=j)
 
                 index = i+j*h
+                if index >= len(mode_records): continue
+
                 text = f'{index+1:0>2}. '
-                try:
-                    date, playtime = record[index]
-                    from view import Timer
-                    display_time = Timer.sec2min(playtime)
-                    text += f'{date:15}{display_time}'
-                except: pass
+                date, playtime = mode_records[index]
+                display_time = sec2min(playtime)
+                text += f'{date:15}{display_time}'
 
                 label.config(text=text, anchor=W,
                     font=font.Font(size=10)
@@ -178,7 +177,7 @@ class GUI:
 
     def start(self):
         self.__root.mainloop()
-    
+
     def __exit(self):
         self.__dump_records()
         self.__root.destroy()
