@@ -144,7 +144,7 @@ class GUI:
             mode_records = mode_records[:20]
 
         with open(RECORDS_FILE, 'w') as f:
-            f.write(json.dumps(self.__records))
+            json.dump(self.__records, f, indent=2)
 
     def __show_records(self):
         mode = self.__choice.get()
