@@ -5,22 +5,22 @@ import random
 class Mode:
     ATTRS = ('height', 'width', 'mines')
     def __init__(self, height:int, width:int, mines:int):
-        self.__height = height
-        self.__width = width
-        self.__mines = mines
+        self._height = height
+        self._width = width
+        self._mines = mines
         assert self.num_safes >= 9
 
     @property
     def height(self):
-        return self.__height
+        return self._height
 
     @property
     def width(self):
-        return self.__width
+        return self._width
 
     @property
     def mines(self):
-        return self.__mines
+        return self._mines
 
     @property
     def num_safes(self):
@@ -65,31 +65,31 @@ class GameState(Enum):
 
 class Game:
     def __init__(self, mode:Mode):
-        self.__mode = mode
-        self.__data = Board(mode.height, mode.width, 0)
-        self.__field = Board(mode.height, mode.width, Item.UNOPEN)
+        self._mode = mode
+        self._data = Board(mode.height, mode.width, 0)
+        self._field = Board(mode.height, mode.width, Item.UNOPEN)
 
-        self.__mines_left = mode.mines
-        self.__safes_left = mode.num_safes
+        self._mines_left = mode.mines
+        self._safes_left = mode.num_safes
 
-        self.__start_coord = None
-        self.__state = GameState.PLAY
+        self._start_coord = None
+        self._state = GameState.PLAY
 
-    def __gen_data(self, sr:int, sc:int):
+    def _gen_data(self, sr:int, sc:int):
         viable_coords = [
-            (r,c) for r,c in self.__data.all_coords
+            (r,c) for r,c in self._data.all_coords
             if abs(r-sr) > 1 or abs(c-sc) > 1
         ]
-        mines_coords = random.sample(viable_coords, k=self.mode.mines)
+        mines_coords = random.sample(viable_coords, self.mode.mines)
 
         for r,c in mines_coords:
-            self.__data[r,c] = -1
+            self._data[r,c] = -1
             for i,j in vicinity(r,c):
-                if not self.__data.valid_bound(i,j): continue
-                if self.__data[i,j] == -1: continue
-                self.__data[i,j] += 1
+                if not self._data.valid_bound(i,j): continue
+                if self._data[i,j] == -1: continue
+                self._data[i,j] += 1
 
-        self.__start_coord = sr,sc
+        self._start_coord = sr,sc
 
         # temporarily remove game view
         view = self.__view
@@ -104,72 +104,72 @@ class Game:
         self.restart(False)
         self.__view = view
 
-    def __adjust(self, row:int, col:int, item:Item):
-        if self.__field[row,col] is item: return
-        self.__field[row,col] = item
+    def _adjust(self, row:int, col:int, item:Item):
+        if self._field[row,col] is item: return
+        self._field[row,col] = item
         try:
             self.__view.adjust_grid(row, col, item)
             self.__view.update()
         except: pass
 
-    def __valid_action(self, row:int, col:int):
-        return self.__state is GameState.PLAY \
-        and self.__field.valid_bound(row,col)
+    def _valid_action(self, row:int, col:int):
+        return self._state is GameState.PLAY \
+        and self._field.valid_bound(row,col)
 
     def open(self, row:int, col:int, auto:bool=True):
-        if not self.__valid_action(row,col): return False
-        if self.__field[row,col] is not Item.UNOPEN: return False
-        if not self.__start_coord: self.__gen_data(row,col)
+        if not self._valid_action(row,col): return False
+        if self._field[row,col] is not Item.UNOPEN: return False
+        if not self._start_coord: self._gen_data(row,col)
 
-        if self.__data[row,col] == -1: # lose
-            self.__adjust(row, col, Item.BOMB)
-            for r,c in self.__field.all_coords:
-                if self.__field[r,c] is Item.FLAG \
-                and self.__data[r,c] != -1:
-                    self.__adjust(r,c, Item.BADFLAG)
-            self.__state = GameState.LOSE
+        if self._data[row,col] == -1: # lose
+            self._adjust(row, col, Item.BOMB)
+            for r,c in self._field.all_coords:
+                if self._field[r,c] is Item.FLAG \
+                and self._data[r,c] != -1:
+                    self._adjust(r,c, Item.BADFLAG)
+            self._state = GameState.LOSE
         else:
-            self.__adjust(row, col, Item(self.__data[row,col]))
-            self.__safes_left -= 1
+            self._adjust(row, col, Item(self._data[row,col]))
+            self._safes_left -= 1
 
             assert self.safes_left >= 0
             if self.safes_left == 0: # win
-                for r,c in self.__field.all_coords:
+                for r,c in self._field.all_coords:
                     self.flag(r,c)
-                self.__state = GameState.WIN
+                self._state = GameState.WIN
 
             # auto open around ZERO
-            if auto and self.__field[row,col] is Item.ZERO:
+            if auto and self._field[row,col] is Item.ZERO:
                 for r,c in vicinity(row,col):
                     self.open(r,c)
         return True
 
     def flag(self, row:int, col:int):
-        if not self.__valid_action(row,col): return False
-        if self.__field[row,col] is not Item.UNOPEN: return False
-        if self.__mines_left <= 0: return False
+        if not self._valid_action(row,col): return False
+        if self._field[row,col] is not Item.UNOPEN: return False
+        if self._mines_left <= 0: return False
 
-        self.__adjust(row, col, Item.FLAG)
-        self.__mines_left -= 1
+        self._adjust(row, col, Item.FLAG)
+        self._mines_left -= 1
         return True
 
     def unflag(self, row:int, col:int):
-        if not self.__valid_action(row,col): return False
-        if self.__field[row,col] is not Item.FLAG: return False
+        if not self._valid_action(row,col): return False
+        if self._field[row,col] is not Item.FLAG: return False
 
-        self.__adjust(row, col, Item.UNOPEN)
-        self.__mines_left += 1
+        self._adjust(row, col, Item.UNOPEN)
+        self._mines_left += 1
         return True
 
     def auto(self, row:int, col:int):
-        if not self.__valid_action(row,col): return False
-        mines_left = self.__field[row,col].value
+        if not self._valid_action(row,col): return False
+        mines_left = self._field[row,col].value
         if mines_left <= 0: return False
 
         unopens = []
         for r,c in vicinity(row,col):
-            if not self.__field.valid_bound(r,c): continue
-            item = self.__field[r,c]
+            if not self._field.valid_bound(r,c): continue
+            item = self._field[r,c]
             if item is Item.UNOPEN:
                 unopens.append((r,c))
             elif item is Item.FLAG:
@@ -186,21 +186,21 @@ class Game:
         return True
 
     def restart(self, new:bool=True):
-        for r,c in self.__field.all_coords:
-            self.__adjust(r,c, Item.UNOPEN)
+        for r,c in self._field.all_coords:
+            self._adjust(r,c, Item.UNOPEN)
 
-        self.__mines_left = self.mode.mines
-        self.__safes_left = self.mode.num_safes
-        self.__state = GameState.PLAY
+        self._mines_left = self.mode.mines
+        self._safes_left = self.mode.num_safes
+        self._state = GameState.PLAY
 
         if new:
-            self.__start_coord = None
-            for r,c in self.__data.all_coords:
-                self.__data[r,c] = 0
+            self._start_coord = None
+            for r,c in self._data.all_coords:
+                self._data[r,c] = 0
 
     def item_at(self, row:int, col:int) -> Item|None:
-        return self.__field[row,col] \
-        if self.__field.valid_bound(row,col) else None
+        return self._field[row,col] \
+        if self._field.valid_bound(row,col) else None
 
     def setview(self, view):
         from view import GameView
@@ -209,27 +209,27 @@ class Game:
 
     @property
     def field_coords(self):
-        return self.__field.all_coords
+        return self._field.all_coords
 
     @property
     def mines_left(self):
-        return self.__mines_left
+        return self._mines_left
 
     @property
     def safes_left(self):
-        return self.__safes_left
+        return self._safes_left
 
     @property
     def state(self):
-        return self.__state
+        return self._state
 
     @property
     def mode(self):
-        return self.__mode
+        return self._mode
 
     @property
     def start_coord(self):
-        return self.__start_coord
+        return self._start_coord
 
     # functions for modify data (requested by solver)
     def modify(self, store):
@@ -243,8 +243,8 @@ class Game:
         # get full(mine)/clear(safe) from given equation's variables
         full, clear = [], []
         for r,c in eqn.vars_pos:
-            assert self.__field[r,c] is Item.UNOPEN
-            if self.__data[r,c] == -1:
+            assert self._field[r,c] is Item.UNOPEN
+            if self._data[r,c] == -1:
                 full.append((r,c))
             else: clear.append((r,c))
 
@@ -254,14 +254,14 @@ class Game:
         # get candidates to swap with full/clear above, must be unopen
         # prioritize 'near' squares, which has contact with known squares
         near, far = [], []
-        for r,c in self.__field.all_coords:
+        for r,c in self._field.all_coords:
             if eqn.munge(EQN(r,c,1,0), False): continue
-            if self.__field[r,c] is not Item.UNOPEN: continue
+            if self._field[r,c] is not Item.UNOPEN: continue
 
             isnear = False
             for i,j in vicinity(r,c):
-                if not self.__field.valid_bound(i,j): continue
-                v = self.__field[i,j].value
+                if not self._field.valid_bound(i,j): continue
+                v = self._field[i,j].value
                 if v >= 0:
                     assert v > 0
                     isnear = True
@@ -273,7 +273,7 @@ class Game:
         random.shuffle(near)
         if not near:
             # prioritize empty the set
-            far.sort(key=lambda pos:-self.__data[pos]) # why?
+            far.sort(key=lambda pos:-self._data[pos]) # why?
         else: random.shuffle(far)
 
         usable = near + far
@@ -285,7 +285,7 @@ class Game:
         old, new = None, None # coordinates of old and new mines
 
         for r,c in usable:
-            if self.__data[r,c] == -1:
+            if self._data[r,c] == -1:
                 empty.append((r,c))
             else: fill.append((r,c))
 
@@ -323,28 +323,28 @@ class Game:
     def __apply(self, changes:list[tuple[int,int,bool]]):
         '''Adjust data and field on changes'''
         for r,c, ismine in changes:
-            self.__data[r,c] = -1 if ismine else -2
+            self._data[r,c] = -1 if ismine else -2
 
             d = 1 if ismine else -1
             for i,j in vicinity(r,c):
-                if not self.__data.valid_bound(i,j) \
-                    or self.__data[i,j] < 0: continue
-                self.__data[i,j] += d
-                assert self.__data[i,j] >= 0
+                if not self._data.valid_bound(i,j) \
+                    or self._data[i,j] < 0: continue
+                self._data[i,j] += d
+                assert self._data[i,j] >= 0
 
-                if self.__field[i,j] is not Item.UNOPEN:
-                    self.__adjust(i,j, Item(self.__data[i,j]))
+                if self._field[i,j] is not Item.UNOPEN:
+                    self._adjust(i,j, Item(self._data[i,j]))
 
         # adjust old mines to new value
         for r,c, ismine in changes:
             if ismine: continue
-            assert self.__data[r,c] == -2
+            assert self._data[r,c] == -2
             v = 0
             for i,j in vicinity(r,c):
-                if self.__data.valid_bound(i,j) \
-                and self.__data[i,j] == -1:
+                if self._data.valid_bound(i,j) \
+                and self._data[i,j] == -1:
                     v += 1
-            self.__data[r,c] = v
+            self._data[r,c] = v
 
             # old mines can either be UNOPEN or FLAG
             # neither are important to adjust the field
@@ -352,25 +352,25 @@ class Game:
     def dig(self):
         '''Replace a known flag by a unknown safe square'''
         flags, safes = [], []
-        for r,c in self.__field.all_coords:
-            if self.__field[r,c] is Item.FLAG:
+        for r,c in self._field.all_coords:
+            if self._field[r,c] is Item.FLAG:
                 # make sure the flag connect between
                 # a safe known square and an unopen square
                 has_safe, has_unopen = False, False
                 for i,j in vicinity(r,c):
-                    if not self.__field.valid_bound(i,j): continue
-                    if self.__field[i,j] is Item.UNOPEN:
+                    if not self._field.valid_bound(i,j): continue
+                    if self._field[i,j] is Item.UNOPEN:
                         has_unopen = True
-                    elif self.__field[i,j].value >= 0:
-                        assert self.__field[i,j].value > 0
+                    elif self._field[i,j].value >= 0:
+                        assert self._field[i,j].value > 0
                         has_safe = True
 
                     if has_safe and has_unopen:
                         flags.append((r,c))
                         break
 
-            elif self.__field[r,c] is Item.UNOPEN \
-            and self.__data[r,c] != -1:
+            elif self._field[r,c] is Item.UNOPEN \
+            and self._data[r,c] != -1:
                 safes.append((r,c))
 
         old = random.choice(flags)

@@ -18,139 +18,138 @@ RECORDS_FILE = EXE_DIR + 'src/records.json'
 
 class GUI:
     def __init__(self):
-        self.__load_records()
-        self.__root = Tk()
-        self.__root.resizable(False,False)
-        self.__root.title('Mines')
+        self._load_records()
+        self._root = Tk()
+        self._root.resizable(False,False)
+        self._root.title('Mines')
 
-        self.__mainframe = Frame(self.__root)
-        self.__mainframe.pack()
+        self._mainframe = Frame(self._root)
+        self._mainframe.pack()
 
-        self.__build_menu()
-        self.__build_config()
+        self._build_menu()
+        self._build_config()
+        self._build_game()
 
-        self.__build_game()
-
-    def __build_menu(self):
-        menubar = Frame(self.__mainframe)
+    def _build_menu(self):
+        menubar = Frame(self._mainframe)
         menubar.pack(fill=X, expand=True)
 
-        self.__mode_button = Button(menubar,
+        self._mode_button = Button(menubar,
             text='Mode',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
-            command=self.__choose_mode
+            command=self._choose_mode
         )
-        self.__mode_button.grid(row=0, column=0)
+        self._mode_button.grid(row=0, column=0)
 
-        self.__newgame_button = Button(menubar,
+        self._newgame_button = Button(menubar,
             text='New game',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
-            command=self.__newgame
+            command=self._newgame
         )
-        self.__newgame_button.grid(row=0, column=1)
+        self._newgame_button.grid(row=0, column=1)
 
         Button(menubar,
             text='Records',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
-            command=self.__show_records
+            command=self._show_records
         ).grid(row=0, column=2)
 
         Button(menubar,
             text='Exit',
             font=font.Font(size=10, weight=font.BOLD),
             relief=FLAT,
-            command=self.__exit
+            command=self._exit
         ).grid(row=0, column=3)
 
-    def __build_config(self):
-        self.__config_frame = Frame(self.__root)
+    def _build_config(self):
+        self._config_frame = Frame(self._root)
 
         titles = [s.capitalize() for s in Mode.ATTRS]
         for j, title in enumerate(titles):
-            Label(self.__config_frame, bg='#d0d0d0',
+            Label(self._config_frame, bg='#d0d0d0',
                 text=title, width=8,
             ).grid(row=0, column=j+1, sticky=NSEW)
 
         # modes
-        self.__choice = StringVar(value='Easy')
+        self._choice = StringVar(value='Easy')
         for i, mode in enumerate(MODES):
-            Radiobutton(self.__config_frame,
+            Radiobutton(self._config_frame,
                 anchor=W, width=8,
                 text=mode,
                 value=mode,
-                variable=self.__choice,
+                variable=self._choice,
             ).grid(row=i+1, column=0, sticky=NSEW)
 
             for j, attr in enumerate(Mode.ATTRS):
                 v = getattr(MODES[mode], attr)
-                widget = Label(self.__config_frame, text=v)
+                widget = Label(self._config_frame, text=v)
                 widget.configure(bg='white')
                 widget.grid(row=i+1, column=j+1, sticky=NSEW)
 
-        Button(self.__config_frame,
+        Button(self._config_frame,
             text='OK', bg='#a0a0a0',
             font=font.Font(size=10, weight=font.BOLD),
             activebackground='#a0a0a0',
             relief=FLAT,
-            command=self.__set_mode
+            command=self._set_mode
         ).grid(row=0, column=0, sticky=NSEW)
 
-        Label(self.__config_frame, bg='#d0d0d0',
+        Label(self._config_frame, bg='#d0d0d0',
         ).grid(
             row=len(MODES)+1, column=0,
             columnspan=len(Mode.ATTRS)+1,
             sticky=NSEW
         )
 
-    def __build_game(self):
-        mode = self.__choice.get()
+    def _build_game(self):
+        mode = self._choice.get()
 
-        self.__game = Game(MODES[mode])
-        self.__gameview = GameView(
-            self.__mainframe, self.__game,
-            self.__records[mode]
+        self._game = Game(MODES[mode])
+        self._gameview = GameView(
+            self._mainframe, self._game,
+            self._records[mode]
         )
-        self.__game.setview(self.__gameview)
-        self.__gameview.pack()
+        self._game.setview(self._gameview)
+        self._gameview.pack()
 
-    def __newgame(self):
-        self.__gameview.reset()
+    def _newgame(self):
+        self._gameview.reset()
 
-    def __choose_mode(self):
-        self.__mainframe.forget()
-        self.__config_frame.pack()
+    def _choose_mode(self):
+        self._mainframe.forget()
+        self._config_frame.pack()
 
-    def __set_mode(self):
-        self.__config_frame.forget()
-        self.__mainframe.pack()
+    def _set_mode(self):
+        self._config_frame.forget()
+        self._mainframe.pack()
 
-        self.__gameview.destroy()
-        self.__build_game()
+        self._gameview.destroy()
+        self._build_game()
 
-    def __load_records(self):
+    def _load_records(self):
         try:
             f = open(RECORDS_FILE)
-            self.__records = json.load(f)
+            self._records = json.load(f)
             f.close()
         except FileNotFoundError:
-            self.__records = {mode:[] for mode in MODES}
+            self._records = {mode:[] for mode in MODES}
 
-    def __dump_records(self):
+    def _dump_records(self):
         # trim to 20 records each mode
-        for mode_records in self.__records.values():
+        for mode_records in self._records.values():
             mode_records = mode_records[:20]
 
         with open(RECORDS_FILE, 'w') as f:
-            json.dump(self.__records, f, indent=2)
+            json.dump(self._records, f, indent=2)
 
-    def __show_records(self):
-        mode = self.__choice.get()
-        mode_records = self.__records[mode]
+    def _show_records(self):
+        mode = self._choice.get()
+        mode_records = self._records[mode]
 
-        top = Toplevel(self.__root, bg='red')
+        top = Toplevel(self._root, bg='red')
         top.title(f'{mode} records')
         top.resizable(False, False)
 
@@ -176,8 +175,8 @@ class GUI:
                 )
 
     def start(self):
-        self.__root.mainloop()
+        self._root.mainloop()
 
-    def __exit(self):
-        self.__dump_records()
-        self.__root.destroy()
+    def _exit(self):
+        self._dump_records()
+        self._root.destroy()

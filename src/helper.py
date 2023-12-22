@@ -49,7 +49,6 @@ def sec2min(seconds:float):
 WS = ' '
 BR = '\n'
 class Board:
-    '''2D array wrapper'''
     def __init__(self, h:int, w:int, default=None):
         self.__h, self.__w = h, w
         self.__data = [

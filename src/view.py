@@ -1,4 +1,4 @@
-from helper import get_img, vicinity, sec2min
+from helper import get_img, vicinity, sec2min, repr_today
 from game import Item, GameState, Game
 
 from time import time
@@ -34,41 +34,41 @@ class _GridView(Canvas):
 
         self.__h, self.__w = height, width
         # in pixels
-        self.__scrh = self.__h*self.CELL_SIZE + self.BD*2
-        self.__scrw = self.__w*self.CELL_SIZE + self.BD*2
+        self._scrh = self.__h*self.CELL_SIZE + self.BD*2
+        self._scrw = self.__w*self.CELL_SIZE + self.BD*2
 
         self.config(highlightthickness=0,
-            height=self.__scrh,
-            width= self.__scrw
+            height=self._scrh,
+            width= self._scrw
         )
-        self.__load_imgs()
-        self.__build()
+        self._load_imgs()
+        self._build()
 
-    def __load_imgs(self):
-        self.__tkimgs = {
+    def _load_imgs(self):
+        self._tkimgs = {
             item: ImageTk.PhotoImage(self.IMGS[item])
             for item in self.IMGS
         }
 
-    def __build(self):
-        self.__img_ids = [
+    def _build(self):
+        self._img_ids = [
             [None for _ in range(self.__w)]
             for _ in range(self.__h)
         ] # use to change image later on
 
         for r in range(self.__h):
             for c in range(self.__w):
-                self.__img_ids[r][c] = self.create_image(
+                self._img_ids[r][c] = self.create_image(
                     c*self.CELL_SIZE + self.BD,
                     r*self.CELL_SIZE + self.BD,
-                    image=self.__tkimgs[Item.UNOPEN], anchor=NW
+                    image=self._tkimgs[Item.UNOPEN], anchor=NW
                 )
 
         # sunken effect
         for p in range(self.BD):
-            self.create_line(0,p, self.__scrw-p,p,
+            self.create_line(0,p, self._scrw-p,p,
                 fill='#999999')
-            self.create_line(p,0, p,self.__scrh-p,
+            self.create_line(p,0, p,self._scrh-p,
                 fill='#999999')
 
     def handle_click(self, event:Event):
@@ -78,16 +78,16 @@ class _GridView(Canvas):
 
     def adjust(self, row:int, col:int, item:Item):
         self.itemconfig(
-            self.__img_ids[row][col],
-            image=self.__tkimgs[item]
+            self._img_ids[row][col],
+            image=self._tkimgs[item]
         )
 
 class _SttBar(Label):
     def __init__(self, master):
         super().__init__(master)
-        self.__stt = StringVar()
+        self._stt = StringVar()
         self.config(
-            textvariable=self.__stt,
+            textvariable=self._stt,
             font=font.Font(size=13),
             anchor=W, width=23
         )
@@ -101,154 +101,153 @@ class _SttBar(Label):
             stt = 'Mines left:' + f'{mines_left}'
             if safes_left < 10:
                 stt += f' ({safes_left} safes left)'
-        self.__stt.set(stt)
+        self._stt.set(stt)
 
 class Timer(Label):
     def __init__(self, master):
-        self.__time_var = StringVar()
+        self._time_var = StringVar()
         super().__init__(master)
         self.config(
-            textvariable=self.__time_var,
+            textvariable=self._time_var,
             font=font.Font(size=13),
         )
-        self.__laps = 1000
+        self._laps = 1000
         # stored seconds and started time
-        self.__time = 0.0
-        self.__stime = -0.1
-        self.__adjust()
+        self._time = 0.0
+        self._stime = -0.1
+        self._adjust()
 
     def start(self):
-        self.__stime = time()
-        self.after(self.__laps, self.__count)
+        self._stime = time()
+        self.after(self._laps, self._count)
 
-    def __count(self):
-        self.__adjust()
-        if self.__stime < 0: return
-        self.after(self.__laps, self.__count)
+    def _count(self):
+        self._adjust()
+        if self._stime < 0: return
+        self.after(self._laps, self._count)
 
     def stop(self):
-        self.__time = self.elapsed_time
-        self.__stime = -0.1
-        self.__adjust()
+        self._time = self.elapsed_time
+        self._stime = -0.1
+        self._adjust()
 
     def reset(self):
         self.stop()
-        self.__time = 0.0
-        self.__adjust()
+        self._time = 0.0
+        self._adjust()
 
-    def __adjust(self):
+    def _adjust(self):
         display_time = sec2min(self.elapsed_time)
-        self.__time_var.set(f'[{display_time}]')
+        self._time_var.set(f'[{display_time}]')
 
     @property
     def elapsed_time(self):
-        return self.__time if self.__stime < 0 \
-        else self.__time + time() - self.__stime
+        return self._time if self._stime < 0 \
+        else self._time + time() - self._stime
 
 class GameView(Frame):
-    def __init__(self, master, game:Game, record:list):
+    def __init__(self, master, game:Game, records:list):
         super().__init__(master)
-        self.__game = game
-        mode = self.__game.mode
+        self._game = game
+        mode = self._game.mode
 
         gridframe = Frame(self, bg='#d2d2d2') # for sunken effect
         gridframe.pack()
-        self.__grid = _GridView(gridframe, mode.height, mode.width)
-        self.__grid.pack(padx=30, pady=30)
+        self._grid = _GridView(gridframe, mode.height, mode.width)
+        self._grid.pack(padx=30, pady=30)
 
-        self.__grid.bind('<ButtonRelease-1>', self.lclick)
-        self.__grid.bind('<3>', self.rclick)
+        self._grid.bind('<ButtonRelease-1>', self.lclick)
+        self._grid.bind('<3>', self.rclick)
 
-        self.__grid.bind('<1>', self.__preview)
-        self.__grid.bind('<B1-Motion>', self.__preview)
-        self.__preview_coord = None
+        self._grid.bind('<1>', self._preview)
+        self._grid.bind('<B1-Motion>', self._preview)
+        self._preview_coord = None
 
-        self.__sttbar = _SttBar(self)
-        self.__sttbar.config(bg='#c0c0c0',
+        self._sttbar = _SttBar(self)
+        self._sttbar.config(bg='#c0c0c0',
             highlightthickness=1, highlightbackground='#a0a0a0'
         )
-        self.__sttbar.pack(fill=X, side=RIGHT, expand=True)
+        self._sttbar.pack(fill=X, side=RIGHT, expand=True)
         self.adjust_stt()
 
-        self.__timer = Timer(self)
-        self.__timer.config(bg='#c0c0c0',
+        self._timer = Timer(self)
+        self._timer.config(bg='#c0c0c0',
             highlightthickness=1, highlightbackground='#a0a0a0'
         )
-        self.__timer.pack(fill=X, side=LEFT)
+        self._timer.pack(fill=X, side=LEFT)
 
-        self.__record = record
+        self._records = records
 
     def lclick(self, event:Event):
-        self.__free_preview()
-        r,c = self.__grid.handle_click(event)
+        self._free_preview()
+        r,c = self._grid.handle_click(event)
 
-        first_click = not self.__game.start_coord
+        first_click = not self._game.start_coord
 
-        if self.__game.open(r,c):pass
-        elif self.__game.auto(r,c):pass
+        if self._game.open(r,c):pass
+        elif self._game.auto(r,c):pass
         else: return
         self.adjust_stt()
 
-        if first_click: self.__timer.start()
+        if first_click: self._timer.start()
 
-        state = self.__game.state
+        state = self._game.state
         if state is not GameState.PLAY:
-            self.__timer.stop()
+            self._timer.stop()
             if state is GameState.WIN:
-                self.__add_record(self.__timer.elapsed_time)
+                self._add_record(self._timer.elapsed_time)
 
-    def __add_record(self, playtime:float):
-        from helper import repr_today
+    def _add_record(self, playtime:float):
         rec = repr_today(), playtime
-        self.__record.append(rec)
-        self.__record.sort(key=lambda x:x[1])
+        self._records.append(rec)
+        self._records.sort(key=lambda x:x[1])
 
     def rclick(self, event:Event):
-        r,c = self.__grid.handle_click(event)
-        if self.__game.flag(r,c):pass
-        elif self.__game.unflag(r,c):pass
+        r,c = self._grid.handle_click(event)
+        if self._game.flag(r,c):pass
+        elif self._game.unflag(r,c):pass
         self.adjust_stt()
 
     def reset(self):
-        self.__game.restart()
+        self._game.restart()
         self.adjust_stt()
-        self.__timer.reset()
+        self._timer.reset()
 
     def adjust_stt(self):
-        self.__sttbar.adjust(
-            self.__game.mines_left,
-            self.__game.safes_left,
-            self.__game.state
+        self._sttbar.adjust(
+            self._game.mines_left,
+            self._game.safes_left,
+            self._game.state
         )
 
     def adjust_grid(self, row:int, col:int, item:Item):
-        self.__grid.adjust(row, col, item)
+        self._grid.adjust(row, col, item)
 
-    def __preview(self, event:Event):
-        r,c = self.__grid.handle_click(event)
-        item = self.__game.item_at(r,c)
+    def _preview(self, event:Event):
+        r,c = self._grid.handle_click(event)
+        item = self._game.item_at(r,c)
         if not item: return
-        if (r,c) == self.__preview_coord: return
+        if (r,c) == self._preview_coord: return
 
-        self.__free_preview()
-        self.__preview_coord = r,c
+        self._free_preview()
+        self._preview_coord = r,c
 
         if item is Item.UNOPEN:
-            self.__grid.adjust(r,c, Item.ZERO)
+            self._grid.adjust(r,c, Item.ZERO)
         elif item.value > 0:
             for i,j in vicinity(r,c):
-                item = self.__game.item_at(i,j)
+                item = self._game.item_at(i,j)
                 if item is Item.UNOPEN:
-                    self.__grid.adjust(i,j, Item.ZERO)
+                    self._grid.adjust(i,j, Item.ZERO)
 
-    def __free_preview(self):
-        if not self.__preview_coord: return
-        r,c = self.__preview_coord
+    def _free_preview(self):
+        if not self._preview_coord: return
+        r,c = self._preview_coord
 
-        assert self.__game.item_at(r,c)
+        assert self._game.item_at(r,c)
         for i,j in vicinity(r,c):
-            item = self.__game.item_at(i,j)
+            item = self._game.item_at(i,j)
             if not item: continue
-            self.__grid.adjust(i,j, item)
+            self._grid.adjust(i,j, item)
 
-        self.__preview_coord = None
+        self._preview_coord = None

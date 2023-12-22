@@ -12,11 +12,11 @@ class EQN:
             sc += 1
             mask >>= 1
 
-        self.__sr, self.__sc = sr, sc
-        self.__mask = mask
+        self._sr, self._sc = sr, sc
+        self._mask = mask
 
         assert mines >= 0
-        self.__mines = mines
+        self._mines = mines
 
     def munge(self, other:'EQN', diff:bool):
         '''Return intersection/difference mask of self vs other'''
@@ -75,16 +75,16 @@ class EQN:
 
     @property
     def sr(self):
-        return self.__sr
+        return self._sr
 
     @property
     def sc(self):
-        return self.__sc
+        return self._sc
 
     @property
     def mask(self):
-        return self.__mask
+        return self._mask
 
     @property
     def mines(self):
-        return self.__mines
+        return self._mines
