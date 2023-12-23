@@ -8,7 +8,7 @@ from tkinter import font
 from PIL import ImageTk
 
 class _GridView(Canvas):
-    CELL_SIZE = 20
+    CELL_SIZE = 25
     BD = 5
 
     IMG_SIZE = CELL_SIZE, CELL_SIZE
