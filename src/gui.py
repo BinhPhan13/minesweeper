@@ -22,6 +22,7 @@ class GUI:
         self._root = Tk()
         self._root.resizable(False,False)
         self._root.title('Mines')
+        self._root.bind('s', lambda _: self._solve())
 
         self._mainframe = Frame(self._root)
         self._mainframe.pack()
@@ -173,6 +174,11 @@ class GUI:
                 label.config(text=text, anchor=W,
                     font=font.Font(size=10)
                 )
+
+    def _solve(self):
+        from solver import Solver
+        s = Solver(self._game, sleep_time=0.1)
+        s.solve()
 
     def start(self):
         self._root.mainloop()

@@ -2,11 +2,13 @@ from game import Game, GameState, Item
 from eqn import EQN
 from store import Store
 from helper import vicinity, bitcnt16
+from time import sleep
 
 class Solver:
-    def __init__(self, game:Game):
+    def __init__(self, game:Game, *, sleep_time=0.):
         self._game = game
         self._store = Store()
+        self._sleep_time = sleep_time
 
     def solve(self):
         if not self._game.start_coord: return
@@ -23,6 +25,10 @@ class Solver:
             if self.done: break
             if self._lcl_deduct(): continue
             if self._glb_deduct(): continue
+
+            if self._sleep_time > 0:
+                raise RuntimeError('Modify the map when visualize')
+
             if self._game.modify(self._store): continue
 
             r,c = self._game.dig()
@@ -177,10 +183,12 @@ class Solver:
 
     def _open(self, row:int, col:int):
         assert self._game.open(row,col, False)
+        sleep(self._sleep_time)
         self._process_new(row,col)
 
     def _flag(self, row:int, col:int):
         assert self._game.flag(row,col)
+        sleep(self._sleep_time)
         self._process_new(row,col)
 
     def _process_new(self, row:int, col:int):

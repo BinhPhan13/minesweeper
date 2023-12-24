@@ -180,15 +180,13 @@ class GameView(Frame):
 
     def lclick(self, event:Event):
         self._free_preview()
-        r,c = self._grid.handle_click(event)
-
         first_click = not self._game.start_coord
 
-        if self._game.open(r,c):pass
-        elif self._game.auto(r,c):pass
-        else: return
-        self.adjust_stt()
+        r,c = self._grid.handle_click(event)
+        if not (self._game.open(r,c)
+            or self._game.auto(r,c)): return
 
+        self.adjust_stt()
         if first_click: self._timer.start()
 
         state = self._game.state
@@ -204,8 +202,9 @@ class GameView(Frame):
 
     def rclick(self, event:Event):
         r,c = self._grid.handle_click(event)
-        if self._game.flag(r,c):pass
-        elif self._game.unflag(r,c):pass
+        if not (self._game.flag(r,c)
+            or self._game.unflag(r,c)): return
+
         self.adjust_stt()
 
     def reset(self):
