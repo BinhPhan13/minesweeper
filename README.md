@@ -10,3 +10,6 @@
 - **Guarantee** ability to solve the whole grid without guessing
     - Idea taken from [Mines from Simon Tatham's Puzzle Collection](https://www.chiark.greenend.org.uk/~sgtatham/puzzles/js/mines.html)
     - Use a **different strategy** to alter the map
+
+- BUG: cannot run with python managed by rye
+
